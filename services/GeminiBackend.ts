@@ -6,13 +6,20 @@ import { Tool, Video } from "../types";
 const API_KEY = 'AIzaSyAUJwf-BEBOLdwV1V6wDAKl53FSy9kR4E4';
 const N8N_WEBHOOK_URL = 'https://udx3-12.app.n8n.cloud/webhook-test/ai-sync';
 
+// Safe environment variable access for browser
+const getEnv = (key: string) => {
+    if (typeof process !== 'undefined' && process.env) {
+        return process.env[key];
+    }
+    return undefined;
+};
+
 // Initialize Client (Default instance)
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 // --- FALLBACK DATA (Offline Mode / Quota Exceeded) ---
 const FALLBACK_TRENDING: Tool[] = [
     { id: 'fb-1', name: 'Sora (OpenAI)', url: 'openai.com/sora', category: 'Video Generators', rating: 4.9, reviews: 15000, isPaid: true, pricingModel: 'Paid', isActive: true, logo: 'https://www.google.com/s2/favicons?domain=openai.com&sz=128', shortDescription: 'Create realistic and imaginative scenes from text instructions.', verified: true, trendScore: 99, publishedDate: '24h ago' },
-    // ... kept simplified for brevity
 ];
 
 const FALLBACK_LATEST: Tool[] = [
@@ -195,9 +202,80 @@ export const GeminiBackend = {
      } catch (e) { return []; }
   },
 
+  // --- NEW BULK IMPORT FEATURE ---
+  async processBulkUrls(urls: string[], defaultCategory?: string): Promise<Tool[]> {
+    // Process in chunks of 5 to avoid token limits and ensure higher accuracy
+    const chunkSize = 5;
+    const chunks = [];
+    for (let i = 0; i < urls.length; i += chunkSize) {
+        chunks.push(urls.slice(i, i + chunkSize));
+    }
+
+    let allTools: Tool[] = [];
+
+    for (const chunk of chunks) {
+        try {
+            const prompt = `
+            I have a list of AI Tool URLs. Please analyze them and return a JSON Array of tool objects.
+            URLs: ${chunk.join(', ')}
+            
+            Instructions:
+            1. Extract the tool name from the URL or known brand.
+            2. ${defaultCategory ? `Use category: "${defaultCategory}"` : 'Guess the best category (e.g., Image Generators, Writing, Video, etc).'}
+            3. Write a short, punchy 1-sentence description.
+            4. Guess if it is Paid/Free/Freemium.
+
+            Format for each object:
+            {
+                "name": "Official Name",
+                "website_url": "Clean domain (e.g. midjourney.com)",
+                "category": "Category Name",
+                "description": "Short description",
+                "is_paid": boolean,
+                "pricingModel": "Free" | "Freemium" | "Paid"
+            }
+            Return STRICT JSON. No markdown.
+            `;
+            
+            const text = await callGenAI(prompt, true);
+            const data = parseAIJson(text);
+            
+            if (Array.isArray(data)) {
+                const processed = mapToToolInterface(data, 'bulk-import');
+                allTools = [...allTools, ...processed];
+            }
+        } catch (e) {
+            console.error("Bulk chunk failed", e);
+            // On failure, attempt to create basic entries from URLs
+            const fallbackTools = chunk.map(url => {
+                 const domain = url.replace(/^https?:\/\//, '').split('/')[0];
+                 return {
+                    id: `bulk-fail-${Date.now()}-${Math.random()}`,
+                    name: domain,
+                    url: domain,
+                    category: defaultCategory || 'Uncategorized',
+                    rating: 0,
+                    reviews: 0,
+                    isPaid: false,
+                    pricingModel: 'Freemium' as const, // Cast to literal type
+                    isActive: true,
+                    logo: `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+                    shortDescription: 'Imported via Bulk Tool',
+                    description: 'Imported via Bulk Tool',
+                    features: [],
+                    pricing: [],
+                    plans: [],
+                    verified: false
+                 } as Tool;
+            });
+            allTools = [...allTools, ...fallbackTools];
+        }
+    }
+    return allTools;
+  },
+
   async enrichToolDetails(name: string, category: string, url: string): Promise<Partial<Tool>> {
       try {
-          // Updated prompt to request structured pricing plans
           const prompt = `Generate a detailed profile for the AI tool "${name}" (${category}, URL: ${url}). 
           Return a STRICT JSON object with these keys:
           - description: A compelling summary.
@@ -205,8 +283,7 @@ export const GeminiBackend = {
           - pricingModel: "Free", "Freemium", "Paid", or "Contact for Pricing".
           - plans: Array of objects, each with { "name": string, "price": string (e.g. "0", "20", "Contact"), "billing": string (e.g. "monthly", "forever"), "features": string[] }.
           
-          Do NOT guess prices if unknown, use "Contact" as price.
-          Example Plan: { "name": "Pro", "price": "19", "billing": "monthly", "features": ["Feature A"] }`;
+          Do NOT guess prices if unknown, use "Contact" as price.`;
 
           const text = await callGenAI(prompt, true);
           const data = parseAIJson(text);
@@ -218,7 +295,7 @@ export const GeminiBackend = {
               lastVerified: new Date().toISOString()
           };
       } catch (error) {
-          return {}; // Fail silently
+          return {}; 
       }
   },
 
@@ -275,7 +352,7 @@ export const GeminiBackend = {
 
   async generateImage(prompt: string, size: '1K' | '2K' | '4K', aspectRatio: string): Promise<string | null> {
       try {
-          const currentKey = process.env.API_KEY || API_KEY;
+          const currentKey = getEnv('API_KEY') || API_KEY;
           const freshAi = new GoogleGenAI({ apiKey: currentKey });
           const response = await freshAi.models.generateContent({
               model: 'gemini-3-pro-image-preview',
@@ -290,7 +367,7 @@ export const GeminiBackend = {
   },
 
   async *chatStream(history: any[], message: string, model: string) {
-      const currentKey = process.env.API_KEY || API_KEY;
+      const currentKey = getEnv('API_KEY') || API_KEY;
       const freshAi = new GoogleGenAI({ apiKey: currentKey });
       const chat = freshAi.chats.create({ model: model, history: history });
       const result = await chat.sendMessageStream({ message: message });
@@ -305,21 +382,21 @@ const mapToToolInterface = (data: any[], prefix: string): Tool[] => {
     const isPaid = item.is_paid !== undefined ? item.is_paid : item.isPaid;
     
     return {
-      id: `${prefix}-${item.name.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}`, // Consistent ID generation attempt
-      name: item.name,
+      id: `${prefix}-${item.name?.replace(/\s+/g, '-').toLowerCase() || 'tool'}-${Date.now()}-${index}`,
+      name: item.name || domain,
       url: domain,
-      category: item.category,
+      category: item.category || 'Other',
       rating: 4.5,
-      reviews: item.trend_score_24h || item.reviews || 100,
+      reviews: item.trend_score_24h || item.reviews || 10,
       isPaid: !!isPaid,
       pricingModel: item.pricingModel || (isPaid ? 'Paid' : 'Free'),
       isActive: true,
       logo: `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
-      shortDescription: item.description || item.shortDescription,
+      shortDescription: item.description || item.shortDescription || 'AI Tool',
       verified: false,
       trendScore: item.trend_score_24h,
       publishedDate: item.published_date || item.publishedDate,
-      plans: item.plans || [] // Map plans if available
+      plans: item.plans || [] 
     };
   });
 };

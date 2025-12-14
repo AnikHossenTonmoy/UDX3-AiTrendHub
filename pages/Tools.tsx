@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
 import Modal from '../components/Modal';
@@ -7,9 +8,15 @@ import { GeminiBackend } from '../services/GeminiBackend';
 const Tools = () => {
   const { tools, addTool, addTools, deleteTool } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [filter, setFilter] = useState('All');
   const [isGenerating, setIsGenerating] = useState(false);
   
+  // Bulk Import State
+  const [bulkUrls, setBulkUrls] = useState('');
+  const [bulkCategory, setBulkCategory] = useState('');
+  const [isProcessingBulk, setIsProcessingBulk] = useState(false);
+
   // Form State
   const [formData, setFormData] = useState<Partial<Tool>>({
     name: '',
@@ -48,12 +55,45 @@ const Tools = () => {
     resetForm();
   };
 
+  const handleBulkImport = async () => {
+      if (!bulkUrls.trim()) return;
+      setIsProcessingBulk(true);
+      
+      try {
+          // Split by new line or comma, trim whitespace, remove empty
+          const urls = bulkUrls.split(/[\n,]+/).map(u => u.trim()).filter(u => u.length > 0);
+          
+          if (urls.length === 0) {
+              alert("No valid URLs found.");
+              return;
+          }
+
+          // Call backend to process
+          const newTools = await GeminiBackend.processBulkUrls(urls, bulkCategory || undefined);
+          
+          if (newTools.length > 0) {
+              addTools(newTools);
+              alert(`Successfully imported ${newTools.length} tools!`);
+              setIsBulkModalOpen(false);
+              setBulkUrls('');
+              setBulkCategory('');
+          } else {
+              alert("Failed to import tools. Please check the URLs.");
+          }
+
+      } catch (error) {
+          console.error("Bulk Import Error", error);
+          alert("An error occurred during bulk import.");
+      } finally {
+          setIsProcessingBulk(false);
+      }
+  };
+
   const resetForm = () => {
     setFormData({ name: '', url: '', category: 'Productivity', shortDescription: '', isPaid: false, verified: false, pricingModel: 'Freemium' });
   };
 
   const handleAutoDiscover = async () => {
-    // Note: API Key is now handled inside GeminiBackend service file.
     setIsGenerating(true);
     try {
         const toolsToAdd = await GeminiBackend.discoverTools();
@@ -84,7 +124,14 @@ const Tools = () => {
                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Tools Manager</h2>
             </div>
             
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
+                 <button 
+                    onClick={() => setIsBulkModalOpen(true)}
+                    className="px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md hover:scale-105 transition-transform"
+                 >
+                     <span className="material-symbols-outlined text-[20px]">playlist_add</span>
+                     Bulk Import
+                 </button>
                  <button 
                     onClick={handleAutoDiscover}
                     disabled={isGenerating}
@@ -95,7 +142,7 @@ const Tools = () => {
                     ) : (
                         <span className="material-symbols-outlined text-[20px]">auto_awesome</span>
                     )}
-                    {isGenerating ? 'Discovering...' : 'Auto-Discover with Gemini'}
+                    {isGenerating ? 'Discovering...' : 'Auto-Discover'}
                  </button>
             </div>
         </div>
@@ -198,9 +245,9 @@ const Tools = () => {
                         className="w-full p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                     >
                         <option>Copywriting</option>
-                        <option>Image Gen</option>
+                        <option>Image Generators</option>
                         <option>Coding</option>
-                        <option>Video</option>
+                        <option>Video Generators</option>
                         <option>Productivity</option>
                         <option>Chatbot</option>
                         <option>Audio</option>
@@ -249,6 +296,62 @@ const Tools = () => {
               Add Tool to Directory
             </button>
           </form>
+        </Modal>
+
+        {/* BULK IMPORT MODAL */}
+        <Modal isOpen={isBulkModalOpen} onClose={() => setIsBulkModalOpen(false)} title="Bulk Import Tools">
+            <div className="space-y-4">
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl text-sm text-blue-800 dark:text-blue-300 flex gap-3">
+                    <span className="material-symbols-outlined shrink-0">info</span>
+                    <p>Paste your links below. Gemini will automatically analyze the websites, generate descriptions, and categorize them.</p>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">List of URLs (One per line)</label>
+                    <textarea 
+                        className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono text-xs focus:ring-2 focus:ring-blue-500 h-64 resize-y"
+                        placeholder={`https://midjourney.com\nhttps://openai.com/dall-e-3\nhttps://stability.ai`}
+                        value={bulkUrls}
+                        onChange={e => setBulkUrls(e.target.value)}
+                    ></textarea>
+                </div>
+
+                <div>
+                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Force Category (Optional)</label>
+                     <select 
+                        value={bulkCategory}
+                        onChange={e => setBulkCategory(e.target.value)}
+                        className="w-full p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                    >
+                        <option value="">Auto-Detect via Gemini</option>
+                        <option>Image Generators</option>
+                        <option>Writing & Web SEO</option>
+                        <option>AI Chat & Assistant</option>
+                        <option>Video Generators</option>
+                        <option>Developer Tools</option>
+                    </select>
+                </div>
+
+                <div className="pt-2">
+                    <button 
+                        onClick={handleBulkImport}
+                        disabled={isProcessingBulk || !bulkUrls.trim()}
+                        className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-lg shadow-blue-500/30 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:hover:scale-100"
+                    >
+                        {isProcessingBulk ? (
+                            <>
+                                <span className="size-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                Analyzing & Importing...
+                            </>
+                        ) : (
+                            <>
+                                <span className="material-symbols-outlined">cloud_upload</span>
+                                Start Bulk Import
+                            </>
+                        )}
+                    </button>
+                </div>
+            </div>
         </Modal>
     </div>
   );
