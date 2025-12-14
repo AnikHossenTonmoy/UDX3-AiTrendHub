@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { Tool, Prompt, Video } from '../types';
 
 interface DataContextType {
@@ -280,9 +280,41 @@ const INITIAL_VIDEOS: Video[] = [
 ];
 
 export const DataProvider = ({ children }: { children: ReactNode }) => {
-  const [tools, setTools] = useState<Tool[]>(INITIAL_TOOLS);
-  const [prompts, setPrompts] = useState<Prompt[]>(INITIAL_PROMPTS);
-  const [videos, setVideos] = useState<Video[]>(INITIAL_VIDEOS);
+  // LocalStorage Helper
+  const loadFromStorage = <T,>(key: string, fallback: T): T => {
+    if (typeof window === 'undefined') return fallback;
+    try {
+      const item = window.localStorage.getItem(key);
+      return item ? JSON.parse(item) : fallback;
+    } catch (error) {
+      console.warn(`Error loading ${key} from localStorage`, error);
+      return fallback;
+    }
+  };
+
+  const [tools, setTools] = useState<Tool[]>(() => loadFromStorage('trendhub_tools_v1', INITIAL_TOOLS));
+  const [prompts, setPrompts] = useState<Prompt[]>(() => loadFromStorage('trendhub_prompts_v1', INITIAL_PROMPTS));
+  const [videos, setVideos] = useState<Video[]>(() => loadFromStorage('trendhub_videos_v1', INITIAL_VIDEOS));
+
+  // Sync to LocalStorage whenever state changes
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('trendhub_tools_v1', JSON.stringify(tools));
+    } catch (e) { console.error("Storage full or error saving tools", e); }
+  }, [tools]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('trendhub_prompts_v1', JSON.stringify(prompts));
+    } catch (e) { console.error("Storage full or error saving prompts", e); }
+  }, [prompts]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('trendhub_videos_v1', JSON.stringify(videos));
+    } catch (e) { console.error("Storage full or error saving videos", e); }
+  }, [videos]);
+
 
   const addTool = (tool: Tool) => {
     setTools(prev => {
