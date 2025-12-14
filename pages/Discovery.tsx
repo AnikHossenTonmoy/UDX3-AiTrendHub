@@ -10,6 +10,14 @@ const Discovery = () => {
   // Get top 2 trending prompts (mock logic: just first 2)
   const trendingPrompts = prompts.slice(0, 2);
 
+  const FLOATING_CARDS = [
+    { icon: 'brush', label: 'Image Gen', text: "Cyberpunk city in neon rain, 8k", color: "text-pink-500", bg: "bg-pink-500/10" },
+    { icon: 'terminal', label: 'Code', text: "Python script to scrape prices", color: "text-blue-500", bg: "bg-blue-500/10" },
+    { icon: 'edit_note', label: 'Writing', text: "Blog post about AI trends 2025", color: "text-emerald-500", bg: "bg-emerald-500/10" },
+    { icon: 'movie', label: 'Video', text: "Drone shot of mountains, cinematic", color: "text-orange-500", bg: "bg-orange-500/10" },
+    { icon: 'mail', label: 'Email', text: "Professional follow-up email", color: "text-purple-500", bg: "bg-purple-500/10" },
+  ];
+
   return (
     <div className="pb-10 relative overflow-hidden min-h-screen">
        {/* ANIMATED BACKGROUND START */}
@@ -29,6 +37,19 @@ const Discovery = () => {
           .animation-delay-4000 {
             animation-delay: 4s;
           }
+          
+          /* Floating Cards Animation */
+          @keyframes floatCard {
+            0% { opacity: 0; transform: translateY(40px) scale(0.9) translateX(0); }
+            10% { opacity: 1; transform: translateY(0px) scale(1) translateX(-10px); }
+            50% { opacity: 1; transform: translateY(-20px) scale(1) translateX(10px); }
+            90% { opacity: 0; transform: translateY(-40px) scale(0.9) translateX(0); }
+            100% { opacity: 0; transform: translateY(-40px) scale(0.9); }
+          }
+          .animate-float-card {
+             animation: floatCard 10s ease-in-out infinite;
+             animation-fill-mode: both;
+          }
        `}</style>
        
        <div className="absolute inset-0 -z-10 pointer-events-none">
@@ -46,32 +67,60 @@ const Discovery = () => {
        {/* ANIMATED BACKGROUND END */}
 
       {/* Hero Section */}
-      <section className="relative px-6 py-12 flex flex-col items-center text-center">
+      <section className="relative px-6 pt-20 pb-24 flex flex-col items-center text-center min-h-[600px] justify-center">
         
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 dark:bg-slate-800/80 backdrop-blur border border-slate-200 dark:border-slate-700 mb-6 shadow-sm animate-fadeIn z-10">
+        {/* Floating Prompt Cards (Desktop Only) - Positioned Absolutely to the right side of the Hero */}
+        <div className="hidden lg:block absolute top-0 right-0 w-[400px] h-full pointer-events-none z-0">
+             <div className="relative w-full h-full">
+                {FLOATING_CARDS.map((card, i) => (
+                    <div 
+                        key={i}
+                        className="absolute right-8 p-4 rounded-2xl bg-white/40 dark:bg-slate-800/40 backdrop-blur-md border border-white/50 dark:border-white/10 shadow-lg flex items-center gap-3 w-72 animate-float-card"
+                        style={{
+                            top: `${15 + (i * 18)}%`, // Distribute vertically
+                            marginRight: `${i % 2 === 0 ? '0px' : '40px'}`, // Zigzag
+                            animationDelay: `${i * 2}s`, // Staggered start
+                            opacity: 0 // Start invisible, animation handles opacity
+                        }}
+                    >
+                        <div className={`size-10 rounded-xl flex items-center justify-center ${card.bg} ${card.color} shadow-sm shrink-0`}>
+                            <span className="material-symbols-outlined text-[20px]">{card.icon}</span>
+                        </div>
+                        <div className="flex-1 min-w-0 text-left">
+                            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5">{card.label}</p>
+                            <p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{card.text}</p>
+                        </div>
+                        {/* Glow effect */}
+                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-white/10 to-transparent pointer-events-none"></div>
+                    </div>
+                ))}
+             </div>
+        </div>
+
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 dark:bg-slate-800/80 backdrop-blur border border-slate-200 dark:border-slate-700 mb-8 shadow-sm animate-fadeIn z-10">
            <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Updated Today</span>
         </div>
 
-        <h2 className="text-6xl md:text-8xl font-league font-normal tracking-wide text-slate-900 dark:text-white mb-4 leading-none uppercase flex flex-col items-center relative z-10">
+        <h2 className="text-6xl md:text-8xl font-league font-normal tracking-wide text-slate-900 dark:text-white mb-6 leading-none uppercase flex flex-col items-center relative z-10 drop-shadow-sm">
           <span className="block opacity-0 animate-slideInLeft">
             Discover Trending
           </span>
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 block mt-1 opacity-0 animate-slideInRight [animation-delay:150ms]">
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 block mt-2 opacity-0 animate-slideInRight [animation-delay:150ms]">
             AI Prompts & Tools
           </span>
         </h2>
         
-        <p className="text-slate-600 dark:text-slate-400 max-w-lg mx-auto mb-8 text-lg animate-fadeIn [animation-delay:300ms] opacity-0 relative z-10">
+        <p className="text-slate-600 dark:text-slate-400 max-w-lg mx-auto mb-10 text-lg animate-fadeIn [animation-delay:300ms] opacity-0 relative z-10 font-medium">
           Your curated hub for the internet's best AI resources to supercharge your workflow.
         </p>
 
-        <div className="w-full max-w-lg relative group mb-8 animate-fadeIn [animation-delay:400ms] opacity-0 z-10">
-           <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 group-focus-within:text-blue-600 transition-colors">search</span>
+        <div className="w-full max-w-lg relative group mb-10 animate-fadeIn [animation-delay:400ms] opacity-0 z-10">
+           <span className="absolute left-5 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 group-focus-within:text-blue-600 transition-colors text-[24px]">search</span>
            <input 
              type="text" 
              placeholder="Search prompts, tools, categories..." 
-             className="w-full h-14 pl-12 pr-4 rounded-2xl bg-white/80 dark:bg-dark-surface/80 backdrop-blur-md border border-slate-200 dark:border-dark-border shadow-lg shadow-slate-200/50 dark:shadow-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+             className="w-full h-16 pl-14 pr-4 rounded-2xl bg-white/80 dark:bg-dark-surface/80 backdrop-blur-md border border-slate-200 dark:border-dark-border shadow-xl shadow-slate-200/50 dark:shadow-black/20 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg transition-all hover:bg-white dark:hover:bg-dark-surface"
            />
         </div>
 
@@ -97,7 +146,7 @@ const Discovery = () => {
       <section className="px-4 mb-8 relative z-10">
           <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 justify-center">
             {['All', 'Writing', 'Marketing', 'Coding', 'Image Gen', 'Productivity'].map((cat, i) => (
-                <button key={cat} className={`px-5 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap transition-transform active:scale-95 ${i === 0 ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900' : 'bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm border border-slate-200 dark:border-dark-border text-slate-600 dark:text-slate-300'}`}>
+                <button key={cat} className={`px-6 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap transition-transform active:scale-95 shadow-sm ${i === 0 ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900' : 'bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm border border-slate-200 dark:border-dark-border text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-dark-surface'}`}>
                     {cat}
                 </button>
             ))}
@@ -106,21 +155,21 @@ const Discovery = () => {
 
       {/* Trending Prompts */}
       <section className="px-6 mb-12 max-w-7xl mx-auto w-full relative z-10">
-        <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Trending Prompts</h3>
-            <button onClick={() => navigate('/prompts')} className="text-blue-600 dark:text-blue-400 text-sm font-semibold flex items-center gap-1">View All <span className="material-symbols-outlined text-sm">arrow_forward</span></button>
+        <div className="flex items-center justify-between mb-6">
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Trending Prompts</h3>
+            <button onClick={() => navigate('/prompts')} className="text-blue-600 dark:text-blue-400 text-sm font-bold flex items-center gap-1 hover:underline">View All <span className="material-symbols-outlined text-sm">arrow_forward</span></button>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {trendingPrompts.map(prompt => (
                 <div key={prompt.id} onClick={() => navigate(`/prompts/${prompt.id}`)} className="group bg-white/80 dark:bg-dark-surface/80 backdrop-blur-md p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-dark-border hover:-translate-y-1 transition-transform relative overflow-hidden cursor-pointer">
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <div className="flex justify-between items-start mb-2">
+                    <div className="flex justify-between items-start mb-3">
                         <span className="px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-300 text-xs font-bold uppercase tracking-wider">{prompt.category}</span>
-                        <button className="text-slate-400 hover:text-blue-600"><span className="material-symbols-outlined">bookmark</span></button>
+                        <button className="text-slate-400 hover:text-blue-600 transition-colors"><span className="material-symbols-outlined">bookmark</span></button>
                     </div>
                     <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{prompt.title}</h4>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm line-clamp-2 mb-4">{prompt.description}</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm line-clamp-2 mb-4 leading-relaxed">{prompt.description}</p>
                     <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-dark-border">
                         <div className="flex gap-4 text-xs font-medium text-slate-500">
                             <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">visibility</span> {prompt.views}</span>

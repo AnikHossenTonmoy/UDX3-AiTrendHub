@@ -18,10 +18,12 @@ import ToolDetails from './pages/ToolDetails';
 import AdminPrompts from './pages/AdminPrompts';
 import AIVideos from './pages/AIVideos';
 import AdminVideos from './pages/AdminVideos';
-import AdminUsers from './pages/AdminUsers'; // Import new page
+import AdminUsers from './pages/AdminUsers';
 import SavedCollection from './pages/SavedCollection';
 import Studio from './pages/Studio';
 import Loader from './components/Loader';
+import Maintenance from './pages/Maintenance';
+import { useData } from './context/DataContext';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -59,6 +61,12 @@ const AdminLayout = () => {
 
 // Layout for Public Pages (Navbar top + Bottom Nav on Mobile)
 const PublicLayout = () => {
+  const { maintenanceMode } = useData();
+
+  if (maintenanceMode) {
+    return <Maintenance />;
+  }
+
   return (
     <div className="min-h-screen bg-white dark:bg-dark-bg transition-colors duration-300 pb-20 md:pb-0">
         <Navbar />
@@ -73,7 +81,7 @@ const PublicLayout = () => {
 const AppContent = () => {
   return (
     <Routes>
-      {/* Public Routes */}
+      {/* Public Routes - Wrapped in PublicLayout which handles Maintenance Check */}
       <Route element={<PublicLayout />}>
          <Route path="/" element={<Discovery />} />
          <Route path="/prompts" element={<PromptDirectory />} />
@@ -85,18 +93,17 @@ const AppContent = () => {
          <Route path="/studio" element={<Studio />} />
       </Route>
 
-      {/* Admin Login */}
+      {/* Admin Login (Accessible even in Maintenance) */}
       <Route path="/admin-login" element={<Login />} />
 
-      {/* Admin Routes */}
+      {/* Admin Routes (Accessible even in Maintenance) */}
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<Dashboard />} />
         <Route path="tools" element={<Tools />} />
         <Route path="prompts" element={<AdminPrompts />} />
         <Route path="videos" element={<AdminVideos />} />
-        <Route path="users" element={<AdminUsers />} /> {/* New Route */}
+        <Route path="users" element={<AdminUsers />} /> 
         <Route path="settings" element={<Settings />} />
-        {/* Fallback for admin sub-routes */}
         <Route path="*" element={<div className="p-8 text-center text-slate-500">Feature coming soon</div>} />
       </Route>
 
