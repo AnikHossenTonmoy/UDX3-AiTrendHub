@@ -18,6 +18,7 @@ import ToolDetails from './pages/ToolDetails';
 import AdminPrompts from './pages/AdminPrompts';
 import AIVideos from './pages/AIVideos';
 import AdminVideos from './pages/AdminVideos';
+import AdminUsers from './pages/AdminUsers'; // Import new page
 import SavedCollection from './pages/SavedCollection';
 import Studio from './pages/Studio';
 import Loader from './components/Loader';
@@ -37,6 +38,7 @@ const AdminLayout = () => {
     if (path.includes('tools')) return 'Tools Management';
     if (path.includes('prompts')) return 'Prompt Management';
     if (path.includes('videos')) return 'Video Management';
+    if (path.includes('users')) return 'User Management';
     if (path.includes('settings')) return 'Settings';
     return 'Dashboard Overview';
   };
@@ -92,6 +94,7 @@ const AppContent = () => {
         <Route path="tools" element={<Tools />} />
         <Route path="prompts" element={<AdminPrompts />} />
         <Route path="videos" element={<AdminVideos />} />
+        <Route path="users" element={<AdminUsers />} /> {/* New Route */}
         <Route path="settings" element={<Settings />} />
         {/* Fallback for admin sub-routes */}
         <Route path="*" element={<div className="p-8 text-center text-slate-500">Feature coming soon</div>} />

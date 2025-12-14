@@ -74,10 +74,11 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'Admin' | 'User';
-  status: 'Active' | 'Banned';
+  role: 'Admin' | 'Moderator' | 'User';
+  status: 'Active' | 'Banned' | 'Pending';
   joinedDate: string;
   avatar: string;
+  lastActive?: string;
 }
 
 export interface StatCardProps {
