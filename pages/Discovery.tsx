@@ -1,7 +1,123 @@
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useData } from '../context/DataContext';
+
+// Neural Network Particle Background Component
+const NeuralBackground = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let width = canvas.width = canvas.parentElement?.clientWidth || window.innerWidth;
+    let height = canvas.height = canvas.parentElement?.clientHeight || window.innerHeight;
+
+    let particles: { x: number; y: number; vx: number; vy: number; size: number }[] = [];
+    // Adjust density based on screen size
+    const particleCount = Math.min(Math.floor(width * height / 12000), 100); 
+    const connectionDistance = 140;
+    const mouseDistance = 250;
+
+    let mouse = { x: -1000, y: -1000 };
+
+    // Initialize particles
+    for (let i = 0; i < particleCount; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.3, // Slow, smooth motion
+        vy: (Math.random() - 0.5) * 0.3,
+        size: Math.random() * 1.5 + 0.5
+      });
+    }
+
+    const onResize = () => {
+      width = canvas.width = canvas.parentElement?.clientWidth || window.innerWidth;
+      height = canvas.height = canvas.parentElement?.clientHeight || window.innerHeight;
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = e.clientX - rect.left;
+        mouse.y = e.clientY - rect.top;
+    };
+
+    window.addEventListener('resize', onResize);
+    window.addEventListener('mousemove', onMouseMove);
+
+    const animate = () => {
+      ctx.clearRect(0, 0, width, height);
+      
+      // Update and Draw Particles
+      particles.forEach((p, i) => {
+        // Move
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Bounce off edges
+        if (p.x < 0 || p.x > width) p.vx *= -1;
+        if (p.y < 0 || p.y > height) p.vy *= -1;
+
+        // Mouse interaction (gentle repulsion)
+        const dx = p.x - mouse.x;
+        const dy = p.y - mouse.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < mouseDistance) {
+            const forceDirectionX = dx / distance;
+            const forceDirectionY = dy / distance;
+            const force = (mouseDistance - distance) / mouseDistance;
+            const pushStrength = 0.02; // Very subtle push
+            
+            p.vx += forceDirectionX * force * pushStrength;
+            p.vy += forceDirectionY * force * pushStrength;
+        }
+
+        // Draw Dot
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(96, 165, 250, ${0.6})`; // Soft Blue
+        ctx.fill();
+
+        // Connect to nearby particles
+        for (let j = i + 1; j < particles.length; j++) {
+            const p2 = particles[j];
+            const dx2 = p.x - p2.x;
+            const dy2 = p.y - p2.y;
+            const dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+
+            if (dist2 < connectionDistance) {
+                ctx.beginPath();
+                // Gradient line color based on distance
+                const opacity = 1 - dist2 / connectionDistance;
+                ctx.strokeStyle = `rgba(139, 92, 246, ${opacity * 0.4})`; // Soft Purple, low opacity
+                ctx.lineWidth = 0.5;
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+            }
+        }
+      });
+
+      requestAnimationFrame(animate);
+    };
+
+    const animId = requestAnimationFrame(animate);
+
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('mousemove', onMouseMove);
+      cancelAnimationFrame(animId);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="absolute inset-0 z-0 opacity-40 pointer-events-none mix-blend-screen dark:mix-blend-normal" />;
+};
 
 const Discovery = () => {
   const navigate = useNavigate();
@@ -52,7 +168,7 @@ const Discovery = () => {
           }
        `}</style>
        
-       <div className="absolute inset-0 -z-10 pointer-events-none">
+       <div className="absolute inset-0 -z-10 overflow-hidden">
           {/* Base Background */}
           <div className="absolute inset-0 bg-slate-50/50 dark:bg-dark-bg"></div>
           
@@ -63,6 +179,9 @@ const Discovery = () => {
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/30 rounded-full mix-blend-multiply filter blur-[128px] opacity-70 animate-blob dark:mix-blend-screen dark:bg-purple-900/20"></div>
           <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-500/30 rounded-full mix-blend-multiply filter blur-[128px] opacity-70 animate-blob animation-delay-2000 dark:mix-blend-screen dark:bg-blue-900/20"></div>
           <div className="absolute -bottom-32 left-1/3 w-96 h-96 bg-indigo-500/30 rounded-full mix-blend-multiply filter blur-[128px] opacity-70 animate-blob animation-delay-4000 dark:mix-blend-screen dark:bg-indigo-900/20"></div>
+
+          {/* New Neural Network Canvas Layer */}
+          <NeuralBackground />
        </div>
        {/* ANIMATED BACKGROUND END */}
 
