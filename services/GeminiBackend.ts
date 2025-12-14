@@ -2,8 +2,8 @@
 import { GoogleGenAI } from "@google/genai";
 import { Tool, Video } from "../types";
 
-// Explicitly use the provided API Key
-const API_KEY = 'AIzaSyAUJwf-BEBOLdwV1V6wDAKl53FSy9kR4E4';
+// Explicitly use the provided API Key or Environment Variable
+const API_KEY = process.env.API_KEY || 'AIzaSyAUJwf-BEBOLdwV1V6wDAKl53FSy9kR4E4';
 const N8N_WEBHOOK_URL = 'https://udx3-12.app.n8n.cloud/webhook-test/ai-sync';
 
 // Safe environment variable access for browser
@@ -95,6 +95,7 @@ export const GeminiBackend = {
   // --- N8N Integration ---
   async callN8N(action: string, params: any = {}): Promise<any> {
     try {
+        console.log(`[GeminiBackend] Invoking N8N Webhook (${action}) at: ${N8N_WEBHOOK_URL}`);
         const response = await fetch(N8N_WEBHOOK_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -107,6 +108,7 @@ export const GeminiBackend = {
         }
 
         const data = await response.json();
+        console.log(`[GeminiBackend] N8N Response for ${action}:`, data);
         return data;
     } catch (e) {
         console.warn("N8N Connection Failed:", e);
