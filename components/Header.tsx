@@ -1,4 +1,6 @@
+
 import React from 'react';
+import ThemeToggle from './ThemeToggle';
 
 const Header = ({ title }: { title: string }) => {
   return (
@@ -6,6 +8,8 @@ const Header = ({ title }: { title: string }) => {
       <h1 className="text-xl font-display font-bold text-slate-900 dark:text-white tracking-tight">{title}</h1>
       
       <div className="flex items-center gap-4">
+        <ThemeToggle />
+        
         <div className="hidden sm:flex relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-[20px]">search</span>
           <input 

@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import ThemeToggle from './ThemeToggle';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -33,10 +34,11 @@ const Navbar = () => {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-4">
+             <ThemeToggle />
+             <div className="h-6 w-px bg-slate-200 dark:bg-slate-700"></div>
              <button className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">
                 <span className="material-symbols-outlined text-[24px]">search</span>
              </button>
-             <div className="h-6 w-px bg-slate-200 dark:bg-slate-700"></div>
              <button className="px-5 py-2 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-bold shadow-lg shadow-slate-900/20 hover:-translate-y-0.5 transition-transform">
                 Submit Tool
              </button>
@@ -44,6 +46,7 @@ const Navbar = () => {
 
           {/* Mobile Actions - Simplified Header */}
           <div className="flex md:hidden items-center gap-3">
+             <ThemeToggle />
              <button className="p-2 text-slate-600 dark:text-slate-300">
                 <span className="material-symbols-outlined text-[24px]">search</span>
              </button>

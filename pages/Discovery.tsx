@@ -14,13 +14,15 @@ const NeuralBackground = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let width = canvas.width = canvas.parentElement?.clientWidth || window.innerWidth;
-    let height = canvas.height = canvas.parentElement?.clientHeight || window.innerHeight;
+    // Use window dimensions to ensure full coverage
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
 
     let particles: { x: number; y: number; vx: number; vy: number; size: number }[] = [];
-    // Adjust density based on screen size
-    const particleCount = Math.min(Math.floor(width * height / 12000), 100); 
-    const connectionDistance = 140;
+    
+    // Increase density for better visibility
+    const particleCount = Math.min(Math.floor(width * height / 10000), 120); 
+    const connectionDistance = 160;
     const mouseDistance = 250;
 
     let mouse = { x: -1000, y: -1000 };
@@ -30,15 +32,15 @@ const NeuralBackground = () => {
       particles.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.3, // Slow, smooth motion
-        vy: (Math.random() - 0.5) * 0.3,
-        size: Math.random() * 1.5 + 0.5
+        vx: (Math.random() - 0.5) * 0.5, // Slightly faster for liveliness
+        vy: (Math.random() - 0.5) * 0.5,
+        size: Math.random() * 2 + 1 // Larger size: 1-3px
       });
     }
 
     const onResize = () => {
-      width = canvas.width = canvas.parentElement?.clientWidth || window.innerWidth;
-      height = canvas.height = canvas.parentElement?.clientHeight || window.innerHeight;
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
     };
 
     const onMouseMove = (e: MouseEvent) => {
@@ -72,7 +74,7 @@ const NeuralBackground = () => {
             const forceDirectionX = dx / distance;
             const forceDirectionY = dy / distance;
             const force = (mouseDistance - distance) / mouseDistance;
-            const pushStrength = 0.02; // Very subtle push
+            const pushStrength = 0.05; 
             
             p.vx += forceDirectionX * force * pushStrength;
             p.vy += forceDirectionY * force * pushStrength;
@@ -81,7 +83,8 @@ const NeuralBackground = () => {
         // Draw Dot
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(96, 165, 250, ${0.6})`; // Soft Blue
+        // Stronger blue (blue-500) with decent opacity
+        ctx.fillStyle = `rgba(59, 130, 246, 0.6)`; 
         ctx.fill();
 
         // Connect to nearby particles
@@ -93,10 +96,10 @@ const NeuralBackground = () => {
 
             if (dist2 < connectionDistance) {
                 ctx.beginPath();
-                // Gradient line color based on distance
                 const opacity = 1 - dist2 / connectionDistance;
-                ctx.strokeStyle = `rgba(139, 92, 246, ${opacity * 0.4})`; // Soft Purple, low opacity
-                ctx.lineWidth = 0.5;
+                // Purple line (purple-500)
+                ctx.strokeStyle = `rgba(168, 85, 247, ${opacity * 0.4})`;
+                ctx.lineWidth = 1;
                 ctx.moveTo(p.x, p.y);
                 ctx.lineTo(p2.x, p2.y);
                 ctx.stroke();
@@ -116,7 +119,8 @@ const NeuralBackground = () => {
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 z-0 opacity-40 pointer-events-none mix-blend-screen dark:mix-blend-normal" />;
+  // Removed blend modes and low opacity class to ensure visibility on both light/dark themes
+  return <canvas ref={canvasRef} className="absolute inset-0 z-0 pointer-events-none" />;
 };
 
 const Discovery = () => {
@@ -175,10 +179,10 @@ const Discovery = () => {
           {/* Grid Pattern */}
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
 
-          {/* Animated Blobs */}
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/30 rounded-full mix-blend-multiply filter blur-[128px] opacity-70 animate-blob dark:mix-blend-screen dark:bg-purple-900/20"></div>
-          <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-500/30 rounded-full mix-blend-multiply filter blur-[128px] opacity-70 animate-blob animation-delay-2000 dark:mix-blend-screen dark:bg-blue-900/20"></div>
-          <div className="absolute -bottom-32 left-1/3 w-96 h-96 bg-indigo-500/30 rounded-full mix-blend-multiply filter blur-[128px] opacity-70 animate-blob animation-delay-4000 dark:mix-blend-screen dark:bg-indigo-900/20"></div>
+          {/* Animated Blobs - Reduced opacity to let nodes shine */}
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-[128px] opacity-60 animate-blob dark:mix-blend-screen dark:bg-purple-900/20"></div>
+          <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-500/20 rounded-full mix-blend-multiply filter blur-[128px] opacity-60 animate-blob animation-delay-2000 dark:mix-blend-screen dark:bg-blue-900/20"></div>
+          <div className="absolute -bottom-32 left-1/3 w-96 h-96 bg-indigo-500/20 rounded-full mix-blend-multiply filter blur-[128px] opacity-60 animate-blob animation-delay-4000 dark:mix-blend-screen dark:bg-indigo-900/20"></div>
 
           {/* New Neural Network Canvas Layer */}
           <NeuralBackground />
