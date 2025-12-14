@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { HashRouter as Router, Routes, Route, useLocation, Navigate, Outlet } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import MobileNav from './components/MobileNav'; // Admin Mobile Nav
@@ -18,6 +18,9 @@ import ToolDetails from './pages/ToolDetails';
 import AdminPrompts from './pages/AdminPrompts';
 import AIVideos from './pages/AIVideos';
 import AdminVideos from './pages/AdminVideos';
+import SavedCollection from './pages/SavedCollection';
+import Studio from './pages/Studio';
+import Loader from './components/Loader';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -76,6 +79,8 @@ const AppContent = () => {
          <Route path="/ai-tools" element={<PublicTools />} />
          <Route path="/ai-tools/:id" element={<ToolDetails />} />
          <Route path="/ai-videos-tuto" element={<AIVideos />} />
+         <Route path="/saved" element={<SavedCollection />} />
+         <Route path="/studio" element={<Studio />} />
       </Route>
 
       {/* Admin Login */}
@@ -99,6 +104,24 @@ const AppContent = () => {
 };
 
 const App = () => {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate initial loading time for splash screen
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 2500); // 2.5 seconds splash screen
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#f8fafc] dark:bg-[#101622] transition-colors duration-300">
+        <Loader />
+      </div>
+    );
+  }
+
   return (
     <Router>
       <ScrollToTop />

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useData } from '../context/DataContext';
@@ -20,6 +21,17 @@ const PromptDetails = () => {
     navigator.clipboard.writeText(prompt.content);
     // Could add toast notification here
     alert('Prompt copied to clipboard!');
+  };
+
+  const handleRunInStudio = () => {
+      // Determine prompt type
+      const isImage = prompt.category === 'Image Generation' || prompt.category === 'Art' || prompt.tags.includes('Image');
+      navigate('/studio', { 
+          state: { 
+              prompt: prompt.content,
+              type: isImage ? 'Image Generation' : 'Chat' 
+          }
+      });
   };
 
   return (
@@ -129,13 +141,20 @@ const PromptDetails = () => {
                     </pre>
                 </div>
 
-                <div className="p-4 bg-white dark:bg-dark-surface border-t border-slate-100 dark:border-dark-border flex justify-end">
+                <div className="p-4 bg-white dark:bg-dark-surface border-t border-slate-100 dark:border-dark-border flex flex-col sm:flex-row gap-3 justify-end">
                     <button 
                         onClick={copyToClipboard}
-                        className="w-full sm:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5"
+                        className="flex-1 sm:flex-none px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-900 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors"
                     >
                         <span className="material-symbols-outlined">content_copy</span>
-                        Copy Prompt
+                        Copy
+                    </button>
+                     <button 
+                        onClick={handleRunInStudio}
+                        className="flex-1 sm:flex-none px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5"
+                    >
+                        <span className="material-symbols-outlined">play_circle</span>
+                        Run in Studio
                     </button>
                 </div>
             </div>

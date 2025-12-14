@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useData } from '../context/DataContext';
@@ -13,10 +14,9 @@ const ToolDetails = () => {
   const tool = tools.find(t => t.id === id);
 
   useEffect(() => {
-    // Automatically enrich tool data if it's missing features or pricing
-    // This ensures every tool page looks complete without manual data entry
+    // Automatically enrich tool data if it's missing features or pricing structure
     const checkAndEnrichData = async () => {
-        if (tool && (!tool.features || tool.features.length === 0 || !tool.pricing)) {
+        if (tool && (!tool.features || tool.features.length === 0 || !tool.plans || tool.plans.length === 0)) {
             // Check if we have an API key before trying
             if (!process.env.API_KEY) return;
 
@@ -32,11 +32,37 @@ const ToolDetails = () => {
         }
     };
 
-    checkAndEnrichData();
-  }, [tool?.id]); // Only re-run if ID changes, effectively on mount for this tool
+    if (tool) checkAndEnrichData();
+  }, [tool?.id]); 
 
+  // --- 404 STATE (Tool Not Found) ---
   if (!tool) {
-    return <div className="p-10 text-center text-slate-500">Tool not found</div>;
+    return (
+        <div className="min-h-screen bg-slate-50 dark:bg-dark-bg flex flex-col items-center justify-center p-6 text-center">
+            <div className="size-24 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-6">
+                <span className="material-symbols-outlined text-5xl text-slate-400">search_off</span>
+            </div>
+            <h1 className="text-3xl font-display font-bold text-slate-900 dark:text-white mb-2">Tool Not Found</h1>
+            <p className="text-slate-500 dark:text-slate-400 max-w-md mb-8">
+                The AI tool you are looking for might have been removed or the link is incorrect.
+            </p>
+            <div className="flex gap-4">
+                <button 
+                    onClick={() => navigate('/ai-tools')}
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors flex items-center gap-2"
+                >
+                    <span className="material-symbols-outlined">grid_view</span>
+                    Browse Directory
+                </button>
+                <button 
+                    onClick={() => navigate('/')}
+                    className="px-6 py-3 bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-border text-slate-700 dark:text-white font-bold rounded-xl transition-colors"
+                >
+                    Go Home
+                </button>
+            </div>
+        </div>
+    );
   }
 
   return (
@@ -74,7 +100,7 @@ const ToolDetails = () => {
                                 {isEnriching && (
                                     <span className="flex items-center gap-1 text-xs font-medium text-purple-600 bg-purple-50 dark:bg-purple-900/20 px-2 py-0.5 rounded-full animate-pulse">
                                         <span className="material-symbols-outlined text-[14px] animate-spin">sync</span>
-                                        Generating Details...
+                                        Updating Data...
                                     </span>
                                 )}
                             </div>
@@ -96,17 +122,9 @@ const ToolDetails = () => {
                     </div>
 
                     <div className="mb-8">
-                         {isEnriching && !tool.description ? (
-                             <div className="space-y-2 animate-pulse">
-                                 <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-full"></div>
-                                 <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-5/6"></div>
-                                 <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-4/6"></div>
-                             </div>
-                         ) : (
-                             <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
-                                {tool.description || tool.shortDescription}
-                             </p>
-                         )}
+                         <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
+                            {tool.description || tool.shortDescription}
+                         </p>
                     </div>
 
                     {/* Tabs */}
@@ -151,11 +169,7 @@ const ToolDetails = () => {
                         
                         {activeTab === 'Features' && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {isEnriching && (!tool.features || tool.features.length === 0) ? (
-                                    [1, 2, 3, 4, 5, 6].map(i => (
-                                         <div key={i} className="h-14 bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse"></div>
-                                    ))
-                                ) : (tool.features && tool.features.length > 0) ? (
+                                {tool.features && tool.features.length > 0 ? (
                                     tool.features.map(feat => (
                                         <div key={feat} className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-dark-border">
                                             <span className="material-symbols-outlined text-green-500 flex-shrink-0">check_circle</span>
@@ -163,34 +177,58 @@ const ToolDetails = () => {
                                         </div>
                                     ))
                                 ) : (
-                                    <p className="text-slate-500">No features listed.</p>
+                                    <p className="text-slate-500">No specific features listed.</p>
                                 )}
                             </div>
                         )}
 
+                        {/* STRUCTURED PRICING TAB */}
                          {activeTab === 'Pricing' && (
-                             <div className="bg-white dark:bg-dark-surface rounded-2xl border border-slate-100 dark:border-dark-border overflow-hidden">
-                                {isEnriching && (!tool.pricing || tool.pricing.length === 0) ? (
-                                    <div className="p-6 space-y-4">
-                                         <div className="h-8 bg-slate-100 dark:bg-slate-800 rounded w-1/3 animate-pulse"></div>
-                                         <div className="h-20 bg-slate-100 dark:bg-slate-800 rounded w-full animate-pulse"></div>
-                                    </div>
-                                ) : (tool.pricing && tool.pricing.length > 0) ? (
-                                    <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                                        {tool.pricing.map((price, i) => (
-                                            <div key={i} className="p-4 flex items-center gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                                <div className="size-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 flex-shrink-0">
-                                                    <span className="material-symbols-outlined">payments</span>
-                                                </div>
-                                                <span className="text-base font-semibold text-slate-700 dark:text-slate-200">{price}</span>
-                                            </div>
-                                        ))}
+                             <div className="space-y-6">
+                                {isEnriching ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                         {[1,2,3].map(i => (
+                                             <div key={i} className="h-64 rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse"></div>
+                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="p-6 text-center text-slate-500">
-                                        <p>Pricing information not available.</p>
-                                    </div>
+                                    tool.plans && tool.plans.length > 0 ? (
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            {tool.plans.map((plan, i) => (
+                                                <div key={i} className="bg-white dark:bg-dark-surface p-6 rounded-2xl border border-slate-200 dark:border-dark-border shadow-sm flex flex-col hover:border-blue-500 transition-colors">
+                                                    <h3 className="font-bold text-slate-900 dark:text-white text-lg mb-1">{plan.name}</h3>
+                                                    <div className="flex items-baseline gap-1 mb-4">
+                                                        <span className="text-3xl font-bold text-slate-900 dark:text-white">
+                                                            {plan.price === 'Contact' || plan.price === 'Free' ? '' : '$'}{plan.price}
+                                                        </span>
+                                                        <span className="text-sm text-slate-500">{plan.price === 'Contact' ? '' : `/${plan.billing || 'mo'}`}</span>
+                                                    </div>
+                                                    <ul className="space-y-3 mb-6 flex-1">
+                                                        {(plan.features || []).map((feat, fi) => (
+                                                            <li key={fi} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
+                                                                <span className="material-symbols-outlined text-green-500 text-[18px]">check</span>
+                                                                {feat}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                    <button className="w-full py-2.5 rounded-xl border border-blue-600 text-blue-600 hover:bg-blue-50 dark:border-blue-500 dark:text-blue-400 dark:hover:bg-blue-900/20 font-bold transition-colors">
+                                                        Choose {plan.name}
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="p-8 text-center bg-slate-50 dark:bg-slate-800/30 rounded-2xl">
+                                            <p className="text-slate-500 mb-2">Detailed pricing not available.</p>
+                                            <a href={`https://${tool.url}`} target="_blank" rel="noreferrer" className="text-blue-600 font-bold hover:underline">Check official website</a>
+                                        </div>
+                                    )
                                 )}
+                                
+                                <div className="flex items-center justify-between text-xs text-slate-400 mt-4 px-2">
+                                     <span>* Prices are subject to change by the vendor.</span>
+                                     {tool.lastVerified && <span>Last verified: {new Date(tool.lastVerified).toLocaleDateString()}</span>}
+                                </div>
                             </div>
                         )}
                     </div>
@@ -200,34 +238,29 @@ const ToolDetails = () => {
             {/* Right Column (Sidebar) */}
             <div className="w-full lg:w-80 space-y-6">
                 <div className="bg-white dark:bg-dark-surface p-6 rounded-2xl border border-slate-100 dark:border-dark-border shadow-sm sticky top-24">
-                    <h3 className="font-bold text-slate-900 dark:text-white mb-4">Pricing Summary</h3>
+                    <h3 className="font-bold text-slate-900 dark:text-white mb-4">Quick Summary</h3>
                     <div className="space-y-3">
-                        {tool.pricingModel && (
-                             <div className="flex items-center justify-between">
-                                <span className="text-sm text-slate-500">Model</span>
-                                <span className={`text-sm font-bold ${
-                                    tool.pricingModel === 'Free' ? 'text-green-600' : 
-                                    tool.pricingModel === 'Paid' ? 'text-purple-600' : 'text-blue-600'
-                                }`}>{tool.pricingModel}</span>
-                             </div>
-                        )}
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-slate-500">Model</span>
+                            <span className={`text-sm font-bold ${
+                                tool.pricingModel === 'Free' ? 'text-green-600' : 
+                                tool.pricingModel === 'Paid' ? 'text-purple-600' : 'text-blue-600'
+                            }`}>{tool.pricingModel || 'Freemium'}</span>
+                        </div>
                         <div className="h-px bg-slate-100 dark:bg-slate-700 my-2"></div>
-                         {isEnriching && (!tool.pricing || tool.pricing.length === 0) ? (
-                             <div className="space-y-2">
-                                <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded animate-pulse"></div>
-                                <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded animate-pulse"></div>
-                             </div>
-                         ) : tool.pricing && tool.pricing.slice(0, 3).map((price, i) => (
-                            <div key={i} className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
-                                <span className="size-1.5 rounded-full bg-blue-500 flex-shrink-0"></span>
-                                {price}
+                        {tool.plans && tool.plans.length > 0 && (
+                            <div className="space-y-2">
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Starting at</span>
+                                <div className="font-mono text-slate-700 dark:text-slate-200">
+                                    {tool.plans[0].price === '0' || tool.plans[0].price === 'Free' ? 'Free' : `$${tool.plans[0].price}`}
+                                </div>
                             </div>
-                        ))}
+                        )}
                     </div>
                     
-                    <button className="w-full mt-6 py-2.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-bold hover:opacity-90 transition-opacity">
+                    <a href={`https://${tool.url}`} target="_blank" rel="noreferrer" className="w-full mt-6 block text-center py-2.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-bold hover:opacity-90 transition-opacity">
                         Get Started
-                    </button>
+                    </a>
                 </div>
             </div>
 

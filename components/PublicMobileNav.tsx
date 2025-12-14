@@ -6,39 +6,83 @@ const PublicMobileNav = () => {
   const navItems = [
     { icon: 'home', label: 'Home', path: '/' },
     { icon: 'lightbulb', label: 'Prompts', path: '/prompts' },
+    { icon: 'brush', label: 'Studio', path: '/studio' },
     { icon: 'grid_view', label: 'Tools', path: '/ai-tools' },
-    { icon: 'smart_display', label: 'Tutos', path: '/ai-videos-tuto' },
+    { icon: 'bookmark', label: 'Saved', path: '/saved' },
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-dark-surface/95 backdrop-blur-lg border-t border-slate-200 dark:border-dark-border z-50 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-      <div className="flex justify-around items-center h-16">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) =>
-              `flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-200 active:scale-95 ${
-                isActive 
-                ? 'text-blue-600 dark:text-blue-400' 
-                : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <div className={`relative p-1 rounded-xl transition-colors duration-200 ${isActive ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
-                    <span className={`material-symbols-outlined text-[24px] ${isActive ? 'fill-1' : ''}`}>
-                    {item.icon}
-                    </span>
-                </div>
-                <span className="text-[10px] font-bold tracking-wide">{item.label}</span>
-              </>
-            )}
-          </NavLink>
-        ))}
-      </div>
-    </nav>
+    <>
+      <style>{`
+        /* From Uiverse.io by eslam-hany - Adapted for React */ 
+        .button-container {
+          display: flex;
+          background-color: rgba(0, 73, 144, 0.95); /* Added slight opacity for glass effect */
+          width: 280px; /* Slightly wider to fit 5 items comfortably */
+          height: 50px; /* Increased height for better touch targets */
+          align-items: center;
+          justify-content: space-around;
+          border-radius: 12px; /* Slightly smoother radius */
+          box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px,
+            rgba(0, 73, 144, 0.5) 5px 10px 15px;
+          transition: all 0.5s;
+          backdrop-filter: blur(8px);
+        }
+        
+        .button-container:hover {
+          width: 320px;
+          transition: all 0.5s;
+        }
+
+        .uiverse-button {
+          outline: 0 !important;
+          border: 0 !important;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background-color: transparent;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
+          transition: all ease-in-out 0.3s;
+          cursor: pointer;
+          position: relative;
+        }
+
+        .uiverse-button:hover {
+          transform: translateY(-3px);
+        }
+        
+        .uiverse-button.active {
+           background-color: rgba(255, 255, 255, 0.2);
+           box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        }
+
+        .uiverse-icon {
+          font-size: 24px;
+        }
+      `}</style>
+      
+      <nav className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] pb-safe">
+        <div className="button-container">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) => `uiverse-button ${isActive ? 'active' : ''}`}
+              title={item.label}
+            >
+              {({ isActive }) => (
+                <span className={`material-symbols-outlined uiverse-icon ${isActive ? 'fill-1' : ''}`}>
+                  {item.icon}
+                </span>
+              )}
+            </NavLink>
+          ))}
+        </div>
+      </nav>
+    </>
   );
 };
 

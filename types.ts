@@ -1,4 +1,11 @@
 
+export interface PricingPlan {
+  name: string;
+  price: string | number;
+  billing?: string;
+  features?: string[];
+}
+
 export interface Tool {
   id: string;
   name: string;
@@ -15,12 +22,14 @@ export interface Tool {
   description?: string;
   shortDescription?: string;
   features?: string[];
-  pricing?: string[];
+  pricing?: string[]; // Legacy simple list
+  plans?: PricingPlan[]; // New structured pricing
   screenshots?: string[];
   verified?: boolean;
   // Live Data Fields
   trendScore?: number;
   publishedDate?: string;
+  lastVerified?: string; // ISO Date string for pricing verification
 }
 
 export interface Prompt {

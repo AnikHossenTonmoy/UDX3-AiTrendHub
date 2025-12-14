@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 
@@ -14,31 +15,72 @@ const MobileNav = () => {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-dark-surface/90 backdrop-blur-lg border-t border-slate-200 dark:border-dark-border z-50 pb-safe">
-      <div className="flex justify-around items-center h-16">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            end={item.path === '/admin'}
-            className={({ isActive }) =>
-              `flex flex-col items-center justify-center w-full h-full gap-1 ${
-                isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <span className={`material-symbols-outlined ${isActive ? 'fill-1' : ''}`}>
+    <>
+      <style>{`
+        /* From Uiverse.io by eslam-hany */ 
+        .admin-button-container {
+          display: flex;
+          background-color: rgba(0, 73, 144, 0.95);
+          width: 200px; /* Smaller width for fewer items */
+          height: 50px;
+          align-items: center;
+          justify-content: space-around;
+          border-radius: 12px;
+          box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px,
+            rgba(0, 73, 144, 0.5) 5px 10px 15px;
+          transition: all 0.5s;
+          backdrop-filter: blur(8px);
+        }
+        
+        .admin-button-container:hover {
+          width: 240px;
+          transition: all 0.5s;
+        }
+
+        .uiverse-button {
+          outline: 0 !important;
+          border: 0 !important;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background-color: transparent;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
+          transition: all ease-in-out 0.3s;
+          cursor: pointer;
+        }
+
+        .uiverse-button:hover {
+          transform: translateY(-3px);
+        }
+
+        .uiverse-button.active {
+           background-color: rgba(255, 255, 255, 0.2);
+        }
+      `}</style>
+      <nav className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] pb-safe">
+        <div className="admin-button-container">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              end={item.path === '/admin'}
+              className={({ isActive }) =>
+                `uiverse-button ${isActive ? 'active' : ''}`
+              }
+            >
+              {({ isActive }) => (
+                <span className={`material-symbols-outlined text-[24px] ${isActive ? 'fill-1' : ''}`}>
                   {item.icon}
                 </span>
-                <span className="text-[10px] font-medium">{item.label}</span>
-              </>
-            )}
-          </NavLink>
-        ))}
-      </div>
-    </nav>
+              )}
+            </NavLink>
+          ))}
+        </div>
+      </nav>
+    </>
   );
 };
 

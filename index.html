@@ -7,7 +7,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=League+Gothic&family=Yanone+Kaffeesatz:wght@200..700&display=swap" rel="stylesheet">
     <!-- Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
     
@@ -19,8 +19,9 @@
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              display: ['Space Grotesk', 'sans-serif'],
+              sans: ['"Yanone Kaffeesatz"', 'sans-serif'],
+              display: ['"Yanone Kaffeesatz"', 'sans-serif'],
+              league: ['"League Gothic"', 'sans-serif'],
             },
             colors: {
               primary: {
@@ -40,10 +41,20 @@
               fadeIn: {
                 '0%': { opacity: '0', transform: 'translateY(10px)' },
                 '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              slideInLeft: {
+                '0%': { opacity: '0', transform: 'translateX(-100px)', filter: 'blur(10px)' },
+                '100%': { opacity: '1', transform: 'translateX(0)', filter: 'blur(0)' },
+              },
+              slideInRight: {
+                 '0%': { opacity: '0', transform: 'translateX(100px)', filter: 'blur(10px)' },
+                 '100%': { opacity: '1', transform: 'translateX(0)', filter: 'blur(0)' },
               }
             },
             animation: {
               fadeIn: 'fadeIn 0.3s ease-out forwards',
+              slideInLeft: 'slideInLeft 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
+              slideInRight: 'slideInRight 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
             }
           }
         }
@@ -65,6 +76,30 @@
           -ms-overflow-style: none;  /* IE and Edge */
           scrollbar-width: none;  /* Firefox */
       }
+      
+      /* LOADER CSS (Initial Load) */
+      .initial-loader-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        width: 100vw;
+        background-color: #101622;
+      }
+      .loader-svg {
+        width: 200px;
+        height: 200px;
+      }
+      .trace-bg { stroke: #334155; stroke-width: 2; fill: none; opacity: 0.3; }
+      .trace-flow { stroke-width: 2; fill: none; stroke-dasharray: 20 100; stroke-dashoffset: 120; stroke-linecap: round; animation: flow 2s cubic-bezier(0.5, 0, 0.5, 1) infinite; }
+      .yellow { stroke: #fbbf24; }
+      .blue { stroke: #3b82f6; }
+      .green { stroke: #22c55e; }
+      .purple { stroke: #a855f7; }
+      .red { stroke: #ef4444; }
+      .chip-body { fill: #0f172a; stroke: #334155; stroke-width: 1; }
+      .chip-text { fill: #94a3b8; font-family: monospace; font-weight: bold; font-size: 8px; text-anchor: middle; dominant-baseline: middle; }
+      @keyframes flow { 0% { stroke-dashoffset: 120; } 100% { stroke-dashoffset: 0; } }
     </style>
   <script type="importmap">
 {
@@ -80,6 +115,36 @@
 </script>
 </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+        <!-- Initial Loader (Replaced by React) -->
+        <div class="initial-loader-container">
+            <svg class="loader-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <rect class="chip-body" x="35" y="35" width="30" height="30" rx="4" />
+                <text class="chip-text" x="50" y="50">UDX3</text>
+                <path d="M 50 35 L 50 10" class="trace-bg"></path>
+                <path d="M 65 35 L 65 20 L 80 20 L 80 10" class="trace-bg"></path>
+                <path d="M 65 65 L 65 80 L 80 80 L 80 90" class="trace-bg"></path>
+                <path d="M 50 65 L 50 90" class="trace-bg"></path>
+                <path d="M 35 65 L 35 80 L 20 80 L 20 90" class="trace-bg"></path>
+                <path d="M 35 35 L 35 20 L 20 20 L 20 10" class="trace-bg"></path>
+                <path d="M 35 50 L 10 50" class="trace-bg"></path>
+                <path d="M 65 50 L 90 50" class="trace-bg"></path>
+                
+                <path d="M 50 35 L 50 10" class="trace-flow blue" style="animation-delay: 0s"></path>
+                <path d="M 65 35 L 65 20 L 80 20 L 80 10" class="trace-flow purple" style="animation-delay: 0.2s"></path>
+                <path d="M 65 65 L 65 80 L 80 80 L 80 90" class="trace-flow red" style="animation-delay: 0.4s"></path>
+                <path d="M 50 65 L 50 90" class="trace-flow yellow" style="animation-delay: 0.6s"></path>
+                <path d="M 35 65 L 35 80 L 20 80 L 20 90" class="trace-flow green" style="animation-delay: 0.8s"></path>
+                <path d="M 35 35 L 35 20 L 20 20 L 20 10" class="trace-flow blue" style="animation-delay: 1.0s"></path>
+                <path d="M 35 50 L 10 50" class="trace-flow purple" style="animation-delay: 1.2s"></path>
+                <path d="M 65 50 L 90 50" class="trace-flow red" style="animation-delay: 1.4s"></path>
+                
+                <circle cx="40" cy="35" r="1" fill="#64748b" /> <circle cx="50" cy="35" r="1" fill="#64748b" /> <circle cx="60" cy="35" r="1" fill="#64748b" />
+                <circle cx="40" cy="65" r="1" fill="#64748b" /> <circle cx="50" cy="65" r="1" fill="#64748b" /> <circle cx="60" cy="65" r="1" fill="#64748b" />
+                <circle cx="35" cy="40" r="1" fill="#64748b" /> <circle cx="35" cy="50" r="1" fill="#64748b" /> <circle cx="35" cy="60" r="1" fill="#64748b" />
+                <circle cx="65" cy="40" r="1" fill="#64748b" /> <circle cx="65" cy="50" r="1" fill="#64748b" /> <circle cx="65" cy="60" r="1" fill="#64748b" />
+            </svg>
+        </div>
+    </div>
   </body>
 </html>

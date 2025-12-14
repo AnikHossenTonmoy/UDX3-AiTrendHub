@@ -15,20 +15,25 @@ const Discovery = () => {
       <section className="relative px-6 py-12 flex flex-col items-center text-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-blue-50/50 to-transparent dark:from-blue-900/10 dark:to-transparent -z-10" />
         
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 dark:bg-slate-800/80 backdrop-blur border border-slate-200 dark:border-slate-700 mb-6 shadow-sm">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 dark:bg-slate-800/80 backdrop-blur border border-slate-200 dark:border-slate-700 mb-6 shadow-sm animate-fadeIn">
            <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Updated Today</span>
         </div>
 
-        <h2 className="text-4xl md:text-5xl font-display font-extrabold text-slate-900 dark:text-white mb-4 leading-tight">
-          Discover Trending <br/>
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">AI Prompts & Tools</span>
+        <h2 className="text-6xl md:text-8xl font-league font-normal tracking-wide text-slate-900 dark:text-white mb-4 leading-none uppercase flex flex-col items-center">
+          <span className="block opacity-0 animate-slideInLeft">
+            Discover Trending
+          </span>
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 block mt-1 opacity-0 animate-slideInRight [animation-delay:150ms]">
+            AI Prompts & Tools
+          </span>
         </h2>
-        <p className="text-slate-600 dark:text-slate-400 max-w-lg mx-auto mb-8 text-lg">
+        
+        <p className="text-slate-600 dark:text-slate-400 max-w-lg mx-auto mb-8 text-lg animate-fadeIn [animation-delay:300ms] opacity-0">
           Your curated hub for the internet's best AI resources to supercharge your workflow.
         </p>
 
-        <div className="w-full max-w-lg relative group mb-8">
+        <div className="w-full max-w-lg relative group mb-8 animate-fadeIn [animation-delay:400ms] opacity-0">
            <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 group-focus-within:text-blue-600 transition-colors">search</span>
            <input 
              type="text" 
@@ -37,7 +42,7 @@ const Discovery = () => {
            />
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
+        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md animate-fadeIn [animation-delay:500ms] opacity-0">
             <button 
                 onClick={() => navigate('/prompts')}
                 className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform"

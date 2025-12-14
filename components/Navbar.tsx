@@ -23,6 +23,12 @@ const Navbar = () => {
             <NavLink to="/prompts" className={({isActive}) => `text-sm font-medium transition-colors ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'}`}>Prompts</NavLink>
             <NavLink to="/ai-tools" className={({isActive}) => `text-sm font-medium transition-colors ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'}`}>AI Tools</NavLink>
             <NavLink to="/ai-videos-tuto" className={({isActive}) => `text-sm font-medium transition-colors ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'}`}>AI Videos Tuto</NavLink>
+            <NavLink to="/studio" className={({isActive}) => `text-sm font-medium transition-colors flex items-center gap-1 ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'}`}>
+                <span className="material-symbols-outlined text-[18px]">brush</span> Studio
+            </NavLink>
+            <NavLink to="/saved" className={({isActive}) => `text-sm font-medium transition-colors flex items-center gap-1 ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'}`}>
+                <span className="material-symbols-outlined text-[18px]">bookmark</span> Saved
+            </NavLink>
           </div>
 
           {/* Desktop Actions */}
