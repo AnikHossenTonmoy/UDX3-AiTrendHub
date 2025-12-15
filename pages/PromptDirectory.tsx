@@ -31,10 +31,8 @@ const AnimatedNumber = ({ number, isHovered }: { number: string; isHovered: bool
 const PromptDirectory = () => {
   const navigate = useNavigate();
   const { prompts } = useData();
-  const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-
+  
   // --- Generator State ---
   const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
   const [genInputs, setGenInputs] = useState({
@@ -94,19 +92,6 @@ const PromptDirectory = () => {
       if (creationRef.current) creationObserver.unobserve(creationRef.current);
     };
   }, []);
-
-  // Expanded Categories with IDs matching common Galaxy themes
-  const categories = [
-    { id: 'All', label: 'All Prompts' },
-    { id: 'Marketing', label: 'Marketing' },
-    { id: 'Business', label: 'Business' },
-    { id: 'SEO', label: 'SEO' },
-    { id: 'Writing', label: 'Writing' },
-    { id: 'Coding', label: 'Coding' },
-    { id: 'Art', label: 'Midjourney & Art' },
-    { id: 'Social Media', label: 'Social Media' },
-    { id: 'Productivity', label: 'Productivity' }
-  ];
 
   // Featured Categories Data
   const FEATURED_CATEGORIES = [
@@ -233,22 +218,6 @@ const PromptDirectory = () => {
     { number: "04", title: "Execute & Optimize", desc: "Deploy prompts to your AI systems and achieve superior performance metrics.", icon: "rocket_launch" }
   ];
 
-  // Logic: Filtering
-  const filteredPrompts = prompts.filter(p => {
-    const matchesCategory = activeCategory === 'All' || p.category === activeCategory || (activeCategory === 'Art' && (p.category === 'Image Generation' || p.category === 'Art'));
-    const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          p.content.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
-
-  // Logic: Copy to Clipboard
-  const handleCopy = (e: React.MouseEvent, text: string, id: string) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
-
   const handleCopyGenerated = () => {
       navigator.clipboard.writeText(generatedPrompt);
       alert('Generated prompt copied!');
@@ -298,8 +267,6 @@ const PromptDirectory = () => {
   const handleCategoryClick = (category: any) => {
       if (category.route) {
           navigate(`/prompts/category/${category.route}`);
-      } else {
-          setActiveCategory(category.title.split(' ')[0]);
       }
   };
 
@@ -859,110 +826,6 @@ const PromptDirectory = () => {
             </div>
         </section>
 
-      </section>
-
-      {/* STICKY FILTER BAR */}
-      <div className="sticky top-16 z-30 bg-slate-50/80 dark:bg-[#0B0F19]/80 backdrop-blur-xl border-y border-slate-200 dark:border-slate-800/60 py-4 transition-all">
-          <div className="max-w-7xl mx-auto px-6 overflow-x-auto no-scrollbar">
-              <div className="flex gap-2 min-w-max justify-center md:justify-start lg:justify-center">
-                  {categories.map((cat) => (
-                      <button 
-                        key={cat.id}
-                        onClick={() => setActiveCategory(cat.id)}
-                        className={`px-5 py-2.5 rounded-full text-sm font-bold transition-all border ${
-                            activeCategory === cat.id 
-                            ? 'bg-slate-900 dark:bg-white text-white dark:text-black border-slate-900 dark:border-white shadow-lg scale-105' 
-                            : 'bg-white dark:bg-transparent text-slate-600 dark:text-slate-400 border-slate-200 dark:border-transparent hover:bg-slate-100 dark:hover:bg-slate-800'
-                        }`}
-                      >
-                          {cat.label}
-                      </button>
-                  ))}
-              </div>
-          </div>
-      </div>
-
-      {/* PROMPT GRID SECTION */}
-      <section className="max-w-7xl mx-auto px-6 py-12 min-h-[600px]">
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-             {filteredPrompts.length > 0 ? filteredPrompts.map((prompt) => (
-                 <div 
-                    key={prompt.id} 
-                    onClick={() => navigate(`/prompts/${prompt.id}`)}
-                    className="group relative bg-white dark:bg-[#151b2b] rounded-2xl p-6 border border-slate-200 dark:border-slate-800 hover:border-blue-500/50 dark:hover:border-blue-500/50 shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 cursor-pointer flex flex-col h-full overflow-hidden"
-                 >
-                     {/* Gradient Hover Border Effect (Top Line) */}
-                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
-
-                     {/* Header */}
-                     <div className="flex justify-between items-start mb-4">
-                        <div className="flex items-center gap-2">
-                             <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
-                                 prompt.model?.includes('Image') || prompt.category === 'Art'
-                                 ? 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400' 
-                                 : 'bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400'
-                             }`}>
-                                 <span className="material-symbols-outlined text-[14px]">{prompt.model?.includes('Image') ? 'image' : 'smart_toy'}</span>
-                                 {prompt.model || 'AI'}
-                             </span>
-                        </div>
-                        <button 
-                            onClick={(e) => handleCopy(e, prompt.content, prompt.id)}
-                            className={`p-2 rounded-lg transition-all duration-200 shadow-sm ${
-                                copiedId === prompt.id 
-                                ? 'bg-green-500 text-white' 
-                                : 'bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-white hover:bg-blue-600'
-                            }`}
-                            title="Copy Prompt"
-                        >
-                            <span className="material-symbols-outlined text-[20px]">
-                                {copiedId === prompt.id ? 'check' : 'content_copy'}
-                            </span>
-                        </button>
-                     </div>
-
-                     {/* Content */}
-                     <div className="flex-1 mb-6">
-                         <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-3 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                             {prompt.title}
-                         </h3>
-                         <div className="relative">
-                            <p className="text-sm font-mono text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-black/20 p-3 rounded-lg border border-slate-100 dark:border-slate-800/50 line-clamp-4 leading-relaxed opacity-90 group-hover:opacity-100 transition-opacity">
-                                {prompt.content}
-                            </p>
-                            {/* Fade out effect for text */}
-                            <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-slate-50 dark:from-black/20 to-transparent pointer-events-none rounded-b-lg"></div>
-                         </div>
-                     </div>
-
-                     {/* Footer */}
-                     <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
-                         <span className="text-xs font-bold text-slate-500 dark:text-slate-500 px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded">
-                             {prompt.category}
-                         </span>
-                         <div className="flex items-center gap-4 text-xs font-medium text-slate-400">
-                             <span className="flex items-center gap-1 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"><span className="material-symbols-outlined text-[14px]">visibility</span> {prompt.views}</span>
-                             <span className="flex items-center gap-1 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"><span className="material-symbols-outlined text-[14px]">thumb_up</span> {prompt.likes}</span>
-                         </div>
-                     </div>
-                 </div>
-             )) : (
-                 /* Empty State */
-                 <div className="col-span-full py-20 text-center">
-                     <div className="inline-flex items-center justify-center size-24 rounded-full bg-slate-100 dark:bg-slate-800 mb-6 animate-pulse">
-                         <span className="material-symbols-outlined text-4xl text-slate-400">search_off</span>
-                     </div>
-                     <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">No prompts found</h2>
-                     <p className="text-slate-500 dark:text-slate-400 mb-6">Try adjusting your search or category filter to find what you need.</p>
-                     <button 
-                        onClick={() => {setSearchQuery(''); setActiveCategory('All');}}
-                        className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20"
-                     >
-                         Reset Filters
-                     </button>
-                 </div>
-             )}
-         </div>
       </section>
     </div>
   );

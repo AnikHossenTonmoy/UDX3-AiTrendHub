@@ -13,14 +13,37 @@ const CATEGORY_CONFIG: Record<string, { icon: string; color: string; accent: str
   "Writing & Web SEO": { icon: "edit_square", color: "text-green-600", accent: "border-green-500" },
   "AI Chat & Assistant": { icon: "chat_spark", color: "text-blue-600", accent: "border-blue-500" },
   "Video Generators": { icon: "movie_creation", color: "text-pink-600", accent: "border-pink-500" },
-  // ... (keeping other categories same as existing for brevity, reusing existing mapping)
   "Developer Tools": { icon: "code", color: "text-slate-700 dark:text-slate-300", accent: "border-slate-500" },
   "Productivity": { icon: "speed", color: "text-emerald-600", accent: "border-emerald-500" },
 };
 
+// --- Animated Number Component ---
+const AnimatedNumber = ({ number, isHovered }: { number: string; isHovered: boolean }) => {
+  const [display, setDisplay] = useState(number);
+  
+  useEffect(() => {
+    if (isHovered) {
+      let count = 0;
+      const interval = setInterval(() => {
+        setDisplay(Math.floor(Math.random() * 99).toString().padStart(2, '0'));
+        count++;
+        if (count > 8) {
+          clearInterval(interval);
+          setDisplay(number);
+        }
+      }, 40);
+      return () => clearInterval(interval);
+    } else {
+      setDisplay(number);
+    }
+  }, [isHovered, number]);
+
+  return <span>{display}</span>;
+};
+
 const PublicTools = () => {
   const navigate = useNavigate();
-  const { tools: staticTools, addTools } = useData(); // Use addTools to dispatch
+  const { tools: staticTools, addTools } = useData(); 
   
   // Real-time Data States
   const [liveTrending, setLiveTrending] = useState<Tool[]>([]);
@@ -31,11 +54,51 @@ const PublicTools = () => {
   // Bookmark State
   const [savedToolIds, setSavedToolIds] = useState<Set<string>>(new Set());
   
-  // Filtering State
+  // Filtering & Search State
   const [activeCategory, setActiveCategory] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
   
   // See All Modal State
   const [selectedCategoryData, setSelectedCategoryData] = useState<{title: string, data: Tool[]} | null>(null);
+
+  // Hover state for How it Works cards
+  const [hoveredStep, setHoveredStep] = useState<number | null>(null);
+
+  // System Advantages Data
+  const ADVANTAGES = [
+    {
+      title: "Verified AI Database",
+      desc: "Every tool is manually verified and tested to ensure functionality and safety for our users.",
+      icon: "verified_user",
+      badge: "QUALITY"
+    },
+    {
+      title: "Real-Time Trends",
+      desc: "Live tracking of tool popularity and user engagement metrics to find what's hot.",
+      icon: "trending_up",
+      badge: "LIVE"
+    },
+    {
+      title: "Daily Updates",
+      desc: "New tools added daily to keep you at the bleeding edge of AI technology and innovation.",
+      icon: "update",
+      badge: "FRESH"
+    },
+    {
+      title: "Smart Categorization",
+      desc: "Intelligent tagging and categorization for effortless discovery of specific use-cases.",
+      icon: "category",
+      badge: "ORGANIZED"
+    }
+  ];
+
+  // How It Works Data
+  const HOW_IT_WORKS = [
+    { number: "01", title: "Browse Categories", desc: "Explore our extensive directory of AI tools organized by specific use-cases.", icon: "manage_search" },
+    { number: "02", title: "Filter & Search", desc: "Narrow down results by pricing, features, and user ratings to find the perfect fit.", icon: "filter_list" },
+    { number: "03", title: "View Details", desc: "Get in-depth insights, pricing plans, and feature breakdowns for each tool.", icon: "visibility" },
+    { number: "04", title: "Launch & Use", desc: "Direct access to the tool's official website to start building immediately.", icon: "rocket_launch" }
+  ];
 
   // Load bookmarks on mount
   useEffect(() => {
@@ -72,10 +135,20 @@ const PublicTools = () => {
 
   const getByCategory = (cat: string) => staticTools.filter(t => t.category === cat || t.category.includes(cat));
 
+  // --- Search Filtering ---
+  const filterTools = (toolsList: Tool[]) => {
+      if (!searchQuery) return toolsList;
+      const lower = searchQuery.toLowerCase();
+      return toolsList.filter(t => 
+        t.name.toLowerCase().includes(lower) || 
+        (t.shortDescription && t.shortDescription.toLowerCase().includes(lower)) ||
+        t.category.toLowerCase().includes(lower)
+      );
+  };
+
   // --- Real-Time Fetching Logic ---
   const fetchData = async () => {
     try {
-        console.log("Fetching live data from Gemini...");
         const [trends, latest] = await Promise.all([
             GeminiBackend.fetchTrendingTools(),
             GeminiBackend.fetchLatestTools()
@@ -84,8 +157,6 @@ const PublicTools = () => {
         if (trends.length > 0) setLiveTrending(trends);
         if (latest.length > 0) setLiveLatest(latest);
         
-        // CRITICAL FIX: Dispatch tools to Global Context so routing works!
-        // This ensures when user clicks a card, the ID exists in the context for ToolDetails page
         addTools([...trends, ...latest]);
 
         setLastUpdated(new Date());
@@ -109,8 +180,20 @@ const PublicTools = () => {
       setSelectedCategoryData({ title, data });
   };
 
+  // Logic to handle mouse move for spotlight effect (optional polish)
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const cards = document.getElementsByClassName('spotlight-card');
+    for (const card of cards) {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        (card as HTMLElement).style.setProperty('--mouse-x', `${x}px`);
+        (card as HTMLElement).style.setProperty('--mouse-y', `${y}px`);
+    }
+  };
+
   return (
-    <div className="bg-slate-50 dark:bg-dark-bg min-h-screen py-10 px-4 sm:px-6">
+    <div className="bg-slate-50 dark:bg-dark-bg min-h-screen font-sans" onMouseMove={handleMouseMove}>
        <style>{`
           .custom-scrollbar::-webkit-scrollbar { width: 6px; }
           .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -119,30 +202,66 @@ const PublicTools = () => {
           .material-symbols-outlined.fill-1 { font-variation-settings: 'FILL' 1; }
        `}</style>
 
-       <div className="max-w-[1800px] mx-auto">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-4xl md:text-6xl font-display font-bold text-slate-900 dark:text-white mb-4">
-               Ultimate AI Directory
-            </h1>
-            <p className="text-slate-500 dark:text-slate-400 text-lg max-w-2xl mx-auto flex items-center justify-center gap-2">
-               <span>Explore {staticTools.length} curated tools.</span>
-               {isLoadingLive ? (
-                 <span className="flex items-center text-xs text-blue-500 font-bold bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-full">
-                    <span className="size-2 bg-blue-500 rounded-full mr-1 animate-pulse"></span>
-                    Syncing...
-                 </span>
-               ) : (
-                  <span className="flex items-center text-xs text-green-500 font-bold bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full">
-                    <span className="size-2 bg-green-500 rounded-full mr-1 animate-pulse"></span>
-                    Live Data Active ({lastUpdated.toLocaleTimeString()})
-                 </span>
-               )}
-            </p>
-          </div>
+       {/* HERO SECTION START */}
+       <section className="relative pt-24 pb-20 px-6 overflow-hidden mb-8">
+            {/* Background Effects */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none z-0">
+                <div className="absolute top-[-10%] left-[10%] w-[600px] h-[600px] bg-blue-600/10 blur-[100px] rounded-full mix-blend-multiply dark:mix-blend-screen opacity-50 dark:opacity-40"></div>
+                <div className="absolute top-[10%] right-[10%] w-[500px] h-[500px] bg-purple-600/10 blur-[100px] rounded-full mix-blend-multiply dark:mix-blend-screen opacity-50 dark:opacity-40"></div>
+            </div>
 
+            <div className="relative z-10 max-w-5xl mx-auto text-center">
+                {/* Badge */}
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 backdrop-blur-md mb-8 shadow-sm animate-fadeIn">
+                    {isLoadingLive ? (
+                        <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+                    ) : (
+                        <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+                    )}
+                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">
+                        {isLoadingLive ? 'Syncing Database...' : `Live AI Database • Updated ${lastUpdated.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`}
+                    </span>
+                </div>
+
+                {/* Headline */}
+                <h1 className="text-5xl md:text-7xl font-display font-bold text-slate-900 dark:text-white tracking-tight mb-6 leading-tight drop-shadow-sm flex flex-col items-center">
+                    <span className="block opacity-0 animate-slideInLeft">Discover Top</span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-400 dark:via-indigo-400 dark:to-purple-400 opacity-0 animate-slideInRight [animation-delay:200ms]">
+                        AI Tools & Apps
+                    </span>
+                </h1>
+
+                {/* Subtitle */}
+                <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed font-medium opacity-0 animate-fadeIn [animation-delay:400ms]">
+                    Explore {staticTools.length}+ curated AI tools updated daily. Find the perfect software to automate your workflow.
+                </p>
+
+                {/* Search Bar */}
+                <div className="max-w-3xl mx-auto relative group z-20 opacity-0 animate-fadeIn [animation-delay:600ms]">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur opacity-20 group-hover:opacity-30 transition-opacity duration-500"></div>
+                    <div className="relative flex items-center bg-white dark:bg-[#151b2b] rounded-full shadow-2xl border border-slate-200 dark:border-slate-700/60 p-2 transition-all group-hover:border-blue-500/50 group-focus-within:ring-4 ring-blue-500/10">
+                        <div className="pl-6 text-slate-400">
+                            <span className="material-symbols-outlined text-2xl">search</span>
+                        </div>
+                        <input 
+                            type="text" 
+                            placeholder="Search 'Video Editor', 'Copywriting', 'Free'..." 
+                            className="flex-1 bg-transparent border-none text-slate-900 dark:text-white placeholder-slate-400 focus:ring-0 text-lg h-14"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                        <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-8 py-3 font-bold transition-all hover:scale-105 active:scale-95 hidden sm:block shadow-lg shadow-blue-600/20">
+                            Search
+                        </button>
+                    </div>
+                </div>
+            </div>
+       </section>
+       {/* HERO SECTION END */}
+
+       <div className="max-w-[1800px] mx-auto px-4 sm:px-6 pb-20">
           {/* Filters Pills */}
-          <div className="py-4 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0 transition-all">
+          <div className="py-4 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0 transition-all sticky top-16 z-30 bg-slate-50/80 dark:bg-dark-bg/80 backdrop-blur-xl border-y border-transparent">
               <div className="flex gap-2 overflow-x-auto no-scrollbar sm:flex-wrap sm:justify-center">
                 {uniqueCategories.map(cat => (
                     <button
@@ -174,7 +293,7 @@ const PublicTools = () => {
                             title="Latest AI" 
                             icon="bolt" 
                             color="text-blue-500" 
-                            data={displayedLatest} 
+                            data={filterTools(displayedLatest)} 
                             navigate={navigate}
                             isLive={true}
                             onSeeAll={openSeeAll}
@@ -185,7 +304,7 @@ const PublicTools = () => {
                             title="Top 50 Trends [24H]" 
                             icon="trending_up" 
                             color="text-slate-900 dark:text-white" 
-                            data={displayedTrending} 
+                            data={filterTools(displayedTrending)} 
                             navigate={navigate}
                             isRanked
                             isLive={true}
@@ -195,7 +314,7 @@ const PublicTools = () => {
                         />
                         {categoryOrder.map((catName) => {
                             const config = CATEGORY_CONFIG[catName] || { icon: "category", color: "text-slate-500", accent: "border-slate-500" };
-                            const catTools = getByCategory(catName);
+                            const catTools = filterTools(getByCategory(catName));
                             if (catTools.length === 0) return null;
                             return (
                             <CategoryCard 
@@ -217,9 +336,8 @@ const PublicTools = () => {
               </div>
           ) : (
               <div className="animate-fadeIn">
-                   {/* ... (Existing category filtered view logic remains same, just ensuring correct tool access) ... */}
                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {staticTools.filter(t => t.category === activeCategory).map(tool => (
+                        {filterTools(staticTools.filter(t => t.category === activeCategory)).map(tool => (
                                 <div 
                                     key={tool.id} 
                                     onClick={() => navigate(`/ai-tools/${tool.id}`)} 
@@ -250,6 +368,75 @@ const PublicTools = () => {
               </div>
           )}
        </div>
+
+       {/* --- SYSTEM ADVANTAGES SECTION --- */}
+       <section className="py-24 px-6 relative bg-[#07182E] overflow-hidden">
+            <div className="relative z-10 max-w-7xl mx-auto">
+                <h2 className="text-4xl md:text-6xl font-display font-bold text-white text-center mb-20 tracking-tight">
+                    SYSTEM <span className="text-teal-400">ADVANTAGES</span>
+                </h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    {ADVANTAGES.map((adv, i) => (
+                        <div key={i} className="group relative bg-[#0B0F19] rounded-[2rem] p-8 border border-white/5 hover:border-teal-500/30 transition-all duration-300 hover:-translate-y-2">
+                            {/* Icon Container */}
+                            <div className="mb-6 relative">
+                                <span className="absolute -top-6 -right-6 bg-teal-500/20 text-teal-400 text-[10px] font-bold px-2 py-1 rounded-bl-xl border-l border-b border-teal-500/20">
+                                    {adv.badge}
+                                </span>
+                                <div className="size-16 rounded-2xl bg-teal-500/10 flex items-center justify-center text-teal-400 group-hover:scale-110 group-hover:rotate-[360deg] group-hover:shadow-[0_0_30px_rgba(45,212,191,0.3)] transition-all duration-700 ease-out">
+                                    <span className="material-symbols-outlined text-4xl">{adv.icon}</span>
+                                </div>
+                            </div>
+                            
+                            <h3 className="text-xl font-bold text-white mb-3">{adv.title}</h3>
+                            <p className="text-slate-400 text-sm leading-relaxed">
+                                {adv.desc}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+       </section>
+
+       {/* --- HOW IT WORKS SECTION --- */}
+       <section className="py-24 px-6 relative bg-black pb-32">
+            <div className="relative z-10 max-w-7xl mx-auto">
+                <h2 className="text-4xl md:text-6xl font-display font-bold text-white text-center mb-20 tracking-tight">
+                    HOW IT <span className="text-emerald-400">WORKS</span>
+                </h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 relative">
+                    {/* Connecting Line (Desktop) */}
+                    <div className="hidden lg:block absolute top-12 left-[12%] right-[12%] h-0.5 bg-gradient-to-r from-emerald-500/0 via-emerald-500/30 to-emerald-500/0 border-t border-dashed border-emerald-500/30 z-0"></div>
+
+                    {HOW_IT_WORKS.map((step, i) => (
+                        <div 
+                            key={i} 
+                            className="group relative z-10 text-center"
+                            onMouseEnter={() => setHoveredStep(i)}
+                            onMouseLeave={() => setHoveredStep(null)}
+                        >
+                            {/* Circle Step Number */}
+                            <div className="mx-auto size-24 rounded-full bg-[#0B0F19] border-4 border-emerald-500/20 group-hover:border-emerald-500 flex items-center justify-center relative mb-8 transition-all duration-300 shadow-xl group-hover:shadow-[0_0_40px_rgba(16,185,129,0.3)]">
+                                <span className="text-3xl font-bold text-white font-mono">
+                                    <AnimatedNumber number={step.number} isHovered={hoveredStep === i} />
+                                </span>
+                                {/* Small floating icon */}
+                                <div className="absolute -bottom-2 -right-2 size-10 rounded-full bg-emerald-600 flex items-center justify-center text-white shadow-lg border-4 border-black">
+                                    <span className="material-symbols-outlined text-sm">{step.icon}</span>
+                                </div>
+                            </div>
+
+                            <h3 className="text-xl font-bold text-white mb-3 group-hover:text-emerald-400 transition-colors">{step.title}</h3>
+                            <p className="text-slate-400 text-sm leading-relaxed max-w-xs mx-auto">
+                                {step.desc}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+       </section>
 
        {/* See All Modal */}
        <Modal 
