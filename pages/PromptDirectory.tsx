@@ -102,14 +102,14 @@ const PromptDirectory = () => {
             </div>
         </div>
 
-        {/* 4 HERO CARDS - Compact & Darker */}
+        {/* 4 HERO CARDS - Animated with Rotate & Glow */}
         <div className="relative z-10 max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4">
             {/* Card 1 */}
-            <div className="spotlight-card group relative bg-white/10 dark:bg-[#0f111a] border border-slate-200/50 dark:border-white/5 rounded-2xl p-5 flex flex-col items-center text-center overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:border-emerald-500/30 hover:bg-white/20 dark:hover:bg-[#131620]">
+            <div className="spotlight-card group relative bg-white/10 dark:bg-[#0f111a] border border-slate-200/50 dark:border-white/5 rounded-2xl p-5 flex flex-col items-center text-center overflow-hidden transition-all duration-300 hover:scale-[1.05] hover:-translate-y-2 hover:shadow-[0_0_30px_rgba(16,185,129,0.3)] hover:border-emerald-500/50 hover:bg-white/20 dark:hover:bg-[#131620] cursor-pointer">
                 <div className="pointer-events-none absolute -inset-px opacity-0 group-hover:opacity-100 transition duration-300"
                     style={{ background: `radial-gradient(400px circle at var(--mouse-x) var(--mouse-y), rgba(16, 185, 129, 0.1), transparent 40%)` }}
                 />
-                <div className="mb-3 p-3 rounded-xl bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 group-hover:scale-110 transition-transform duration-300">
+                <div className="mb-3 p-3 rounded-xl bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">
                     <span className="material-symbols-outlined text-3xl">database</span>
                 </div>
                 <h3 className="text-3xl font-display font-bold text-slate-900 dark:text-white mb-0.5">500k+</h3>
@@ -118,11 +118,11 @@ const PromptDirectory = () => {
             </div>
 
             {/* Card 2 */}
-            <div className="spotlight-card group relative bg-white/10 dark:bg-[#0f111a] border border-slate-200/50 dark:border-white/5 rounded-2xl p-5 flex flex-col items-center text-center overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:border-blue-500/30 hover:bg-white/20 dark:hover:bg-[#131620]">
+            <div className="spotlight-card group relative bg-white/10 dark:bg-[#0f111a] border border-slate-200/50 dark:border-white/5 rounded-2xl p-5 flex flex-col items-center text-center overflow-hidden transition-all duration-300 hover:scale-[1.05] hover:-translate-y-2 hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:border-blue-500/50 hover:bg-white/20 dark:hover:bg-[#131620] cursor-pointer">
                 <div className="pointer-events-none absolute -inset-px opacity-0 group-hover:opacity-100 transition duration-300"
                     style={{ background: `radial-gradient(400px circle at var(--mouse-x) var(--mouse-y), rgba(59, 130, 246, 0.1), transparent 40%)` }}
                 />
-                <div className="mb-3 p-3 rounded-xl bg-blue-500/10 text-blue-500 dark:text-blue-400 group-hover:scale-110 transition-transform duration-300">
+                <div className="mb-3 p-3 rounded-xl bg-blue-500/10 text-blue-500 dark:text-blue-400 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">
                     <span className="material-symbols-outlined text-3xl">group</span>
                 </div>
                 <h3 className="text-3xl font-display font-bold text-slate-900 dark:text-white mb-0.5">Growing</h3>
@@ -131,11 +131,11 @@ const PromptDirectory = () => {
             </div>
 
             {/* Card 3 */}
-            <div className="spotlight-card group relative bg-white/10 dark:bg-[#0f111a] border border-slate-200/50 dark:border-white/5 rounded-2xl p-5 flex flex-col items-center text-center overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:border-emerald-500/30 hover:bg-white/20 dark:hover:bg-[#131620]">
+            <div className="spotlight-card group relative bg-white/10 dark:bg-[#0f111a] border border-slate-200/50 dark:border-white/5 rounded-2xl p-5 flex flex-col items-center text-center overflow-hidden transition-all duration-300 hover:scale-[1.05] hover:-translate-y-2 hover:shadow-[0_0_30px_rgba(16,185,129,0.3)] hover:border-emerald-500/50 hover:bg-white/20 dark:hover:bg-[#131620] cursor-pointer">
                 <div className="pointer-events-none absolute -inset-px opacity-0 group-hover:opacity-100 transition duration-300"
                     style={{ background: `radial-gradient(400px circle at var(--mouse-x) var(--mouse-y), rgba(16, 185, 129, 0.1), transparent 40%)` }}
                 />
-                <div className="mb-3 p-3 rounded-xl bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 group-hover:scale-110 transition-transform duration-300">
+                <div className="mb-3 p-3 rounded-xl bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">
                     <span className="material-symbols-outlined text-3xl">memory</span>
                 </div>
                 <h3 className="text-3xl font-display font-bold text-slate-900 dark:text-white mb-0.5">High</h3>
@@ -144,11 +144,11 @@ const PromptDirectory = () => {
             </div>
 
             {/* Card 4 */}
-            <div className="spotlight-card group relative bg-white/10 dark:bg-[#0f111a] border border-slate-200/50 dark:border-white/5 rounded-2xl p-5 flex flex-col items-center text-center overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:border-orange-500/30 hover:bg-white/20 dark:hover:bg-[#131620]">
+            <div className="spotlight-card group relative bg-white/10 dark:bg-[#0f111a] border border-slate-200/50 dark:border-white/5 rounded-2xl p-5 flex flex-col items-center text-center overflow-hidden transition-all duration-300 hover:scale-[1.05] hover:-translate-y-2 hover:shadow-[0_0_30px_rgba(249,115,22,0.3)] hover:border-orange-500/50 hover:bg-white/20 dark:hover:bg-[#131620] cursor-pointer">
                 <div className="pointer-events-none absolute -inset-px opacity-0 group-hover:opacity-100 transition duration-300"
                     style={{ background: `radial-gradient(400px circle at var(--mouse-x) var(--mouse-y), rgba(249, 115, 22, 0.1), transparent 40%)` }}
                 />
-                <div className="mb-3 p-3 rounded-xl bg-orange-500/10 text-orange-500 dark:text-orange-400 group-hover:scale-110 transition-transform duration-300">
+                <div className="mb-3 p-3 rounded-xl bg-orange-500/10 text-orange-500 dark:text-orange-400 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">
                     <span className="material-symbols-outlined text-3xl">rocket_launch</span>
                 </div>
                 <h3 className="text-3xl font-display font-bold text-slate-900 dark:text-white mb-0.5">50+</h3>

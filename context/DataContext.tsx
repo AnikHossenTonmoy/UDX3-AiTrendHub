@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { Tool, Prompt, Video, User } from '../types';
 
@@ -414,8 +413,8 @@ const INITIAL_USERS: User[] = [
     { id: 'u4', name: 'Jane Smith', email: 'jane@example.com', role: 'User', status: 'Pending', joinedDate: '2024-02-12', avatar: 'https://ui-avatars.com/api/?name=Jane+Smith&background=random' },
 ];
 
-export const DataProvider = ({ children }: { children: ReactNode }) => {
-  // LocalStorage Helper
+export const DataProvider = ({ children }: { children?: ReactNode }) => {
+  // LocalStorage Helper - Updated Keys to V2 to flush old data
   const loadFromStorage = <T,>(key: string, fallback: T): T => {
     if (typeof window === 'undefined') return fallback;
     try {
@@ -427,19 +426,19 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const [tools, setTools] = useState<Tool[]>(() => loadFromStorage('trendhub_tools_v1', INITIAL_TOOLS));
-  const [prompts, setPrompts] = useState<Prompt[]>(() => loadFromStorage('trendhub_prompts_v1', INITIAL_PROMPTS));
-  const [videos, setVideos] = useState<Video[]>(() => loadFromStorage('trendhub_videos_v1', INITIAL_VIDEOS));
-  const [users, setUsers] = useState<User[]>(() => loadFromStorage('trendhub_users_v1', INITIAL_USERS));
+  const [tools, setTools] = useState<Tool[]>(() => loadFromStorage('trendhub_tools_v2', INITIAL_TOOLS));
+  const [prompts, setPrompts] = useState<Prompt[]>(() => loadFromStorage('trendhub_prompts_v2', INITIAL_PROMPTS));
+  const [videos, setVideos] = useState<Video[]>(() => loadFromStorage('trendhub_videos_v2', INITIAL_VIDEOS));
+  const [users, setUsers] = useState<User[]>(() => loadFromStorage('trendhub_users_v2', INITIAL_USERS));
   
   // Maintenance Mode State
   const [maintenanceMode, setMaintenanceModeState] = useState<boolean>(() => loadFromStorage('trendhub_maintenance_mode', false));
 
-  // Sync to LocalStorage
-  useEffect(() => { try { window.localStorage.setItem('trendhub_tools_v1', JSON.stringify(tools)); } catch (e) {} }, [tools]);
-  useEffect(() => { try { window.localStorage.setItem('trendhub_prompts_v1', JSON.stringify(prompts)); } catch (e) {} }, [prompts]);
-  useEffect(() => { try { window.localStorage.setItem('trendhub_videos_v1', JSON.stringify(videos)); } catch (e) {} }, [videos]);
-  useEffect(() => { try { window.localStorage.setItem('trendhub_users_v1', JSON.stringify(users)); } catch (e) {} }, [users]);
+  // Sync to LocalStorage - Updated Keys to V2
+  useEffect(() => { try { window.localStorage.setItem('trendhub_tools_v2', JSON.stringify(tools)); } catch (e) {} }, [tools]);
+  useEffect(() => { try { window.localStorage.setItem('trendhub_prompts_v2', JSON.stringify(prompts)); } catch (e) {} }, [prompts]);
+  useEffect(() => { try { window.localStorage.setItem('trendhub_videos_v2', JSON.stringify(videos)); } catch (e) {} }, [videos]);
+  useEffect(() => { try { window.localStorage.setItem('trendhub_users_v2', JSON.stringify(users)); } catch (e) {} }, [users]);
   
   useEffect(() => { try { window.localStorage.setItem('trendhub_maintenance_mode', JSON.stringify(maintenanceMode)); } catch (e) {} }, [maintenanceMode]);
 
