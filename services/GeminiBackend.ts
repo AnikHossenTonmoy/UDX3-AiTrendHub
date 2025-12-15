@@ -301,6 +301,16 @@ export const GeminiBackend = {
       }
   },
 
+  // --- NEW: Generate Raw Text for Prompt Generator ---
+  async generateRawText(prompt: string): Promise<string> {
+      try {
+          return await callGenAI(prompt, false); // false for no strict JSON enforcement
+      } catch (e) {
+          console.error("Text Generation Failed", e);
+          return "Failed to generate text. Please try again.";
+      }
+  },
+
   async findYoutubeId(query: string): Promise<string | null> {
     try {
       const response = await ai.models.generateContent({

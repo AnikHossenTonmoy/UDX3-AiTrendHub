@@ -1,7 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useData } from '../context/DataContext';
+import { GeminiBackend } from '../services/GeminiBackend';
 
 const PromptDirectory = () => {
   const navigate = useNavigate();
@@ -9,6 +10,41 @@ const PromptDirectory = () => {
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // --- Generator State ---
+  const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
+  const [genInputs, setGenInputs] = useState({
+      category: '',
+      tone: '',
+      audience: '',
+      purpose: '',
+      details: ''
+  });
+  const [generatedPrompt, setGeneratedPrompt] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // --- Scroll Animation State ---
+  const generatorRef = useRef<HTMLDivElement>(null);
+  const [isGeneratorVisible, setIsGeneratorVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsGeneratorVisible(entry.isIntersecting);
+      },
+      { threshold: 0.2 } // Trigger when 20% visible
+    );
+
+    if (generatorRef.current) {
+      observer.observe(generatorRef.current);
+    }
+
+    return () => {
+      if (generatorRef.current) {
+        observer.unobserve(generatorRef.current);
+      }
+    };
+  }, []);
 
   // Expanded Categories with IDs matching common Galaxy themes
   const categories = [
@@ -37,6 +73,36 @@ const PromptDirectory = () => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleCopyGenerated = () => {
+      navigator.clipboard.writeText(generatedPrompt);
+      alert('Generated prompt copied!');
+  };
+
+  const handleGeneratePrompt = async () => {
+      if (!genInputs.purpose) return;
+      setIsGenerating(true);
+      setGeneratedPrompt('');
+      
+      const promptConstruction = `Act as an expert prompt engineer. Create a high-quality, detailed AI prompt based on the following specifications:
+      - Category: ${genInputs.category || 'General'}
+      - Tone: ${genInputs.tone || 'Professional'}
+      - Target Audience: ${genInputs.audience || 'General'}
+      - Core Purpose: ${genInputs.purpose}
+      - Additional Context: ${genInputs.details || 'None'}
+      
+      Return ONLY the prompt text, no intro/outro.`;
+
+      try {
+          const result = await GeminiBackend.generateRawText(promptConstruction);
+          setGeneratedPrompt(result);
+      } catch (e) {
+          console.error(e);
+          setGeneratedPrompt("Error generating prompt. Please try again.");
+      } finally {
+          setIsGenerating(false);
+      }
   };
 
   // Logic: Spotlight Effect on Mouse Move
@@ -103,7 +169,7 @@ const PromptDirectory = () => {
         </div>
 
         {/* 4 HERO CARDS - Animated with Rotate & Glow */}
-        <div className="relative z-10 max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4">
+        <div className="relative z-10 max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 mb-8">
             {/* Card 1 */}
             <div className="spotlight-card group relative bg-white/10 dark:bg-[#0f111a] border border-slate-200/50 dark:border-white/5 rounded-2xl p-5 flex flex-col items-center text-center overflow-hidden transition-all duration-300 hover:scale-[1.05] hover:-translate-y-2 hover:shadow-[0_0_30px_rgba(16,185,129,0.3)] hover:border-emerald-500/50 hover:bg-white/20 dark:hover:bg-[#131620] cursor-pointer">
                 <div className="pointer-events-none absolute -inset-px opacity-0 group-hover:opacity-100 transition duration-300"
@@ -155,6 +221,169 @@ const PromptDirectory = () => {
                 <p className="text-slate-500 dark:text-slate-400 font-medium mb-3 text-sm">Categories</p>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 px-2 py-0.5 rounded-full">Specialized Areas</span>
             </div>
+        </div>
+
+        {/* --- AI PROMPT GENERATOR SECTION --- */}
+        <div 
+            ref={generatorRef}
+            className={`relative z-20 max-w-7xl mx-auto px-4 mb-16 transform transition-all duration-1000 cubic-bezier(0.17, 0.55, 0.55, 1) ${
+                isGeneratorVisible 
+                ? 'opacity-100 translate-y-0 scale-100' 
+                : 'opacity-0 translate-y-20 scale-95'
+            }`}
+        >
+            {!isGeneratorOpen ? (
+                // Collapsed State (Trigger)
+                <div 
+                    onClick={() => setIsGeneratorOpen(true)}
+                    className="group cursor-pointer rounded-2xl bg-slate-900/50 dark:bg-[#0f111a] border border-slate-200/50 dark:border-white/10 p-6 flex items-center justify-between backdrop-blur-md transition-all hover:border-green-500/50 hover:shadow-[0_0_30px_rgba(34,197,94,0.1)]"
+                >
+                    <div className="flex items-center gap-4">
+                        <div className="size-12 rounded-xl bg-green-500/20 text-green-500 flex items-center justify-center relative">
+                            <span className="material-symbols-outlined text-2xl">neurology</span>
+                            <span className="absolute top-0 right-0 size-3 bg-green-500 rounded-full border-2 border-[#0f111a]"></span>
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-display font-bold text-slate-900 dark:text-white mb-1 uppercase tracking-wide">AI Prompt Generator</h3>
+                            <p className="text-sm text-green-500 font-bold group-hover:text-green-400 transition-colors">Click to activate AI prompt creation</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <div className="text-right hidden sm:block">
+                            <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Status</span>
+                            <p className="text-slate-300 font-bold">READY</p>
+                        </div>
+                        <div className="size-10 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 group-hover:bg-white/10 group-hover:text-white transition-all">
+                            <span className="material-symbols-outlined">expand_more</span>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                // Expanded State (Form)
+                <div className="rounded-3xl bg-white dark:bg-[#151b2b] border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden animate-fadeIn">
+                    <div className="p-6 md:p-8 bg-gradient-to-r from-slate-50 to-white dark:from-[#151b2b] dark:to-[#1a2236]">
+                        <div className="flex justify-between items-center mb-8">
+                            <div className="flex items-center gap-3">
+                                <span className="material-symbols-outlined text-3xl text-green-500">neurology</span>
+                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">AI Prompt Generator</h3>
+                            </div>
+                            <button 
+                                onClick={() => setIsGeneratorOpen(false)}
+                                className="text-slate-400 hover:text-red-500 flex items-center gap-1 text-sm font-bold bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg transition-colors"
+                            >
+                                <span className="material-symbols-outlined text-lg">close</span> Hide
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Category</label>
+                                <select 
+                                    className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={genInputs.category}
+                                    onChange={(e) => setGenInputs({...genInputs, category: e.target.value})}
+                                >
+                                    <option value="">Select Category</option>
+                                    <option>Marketing</option>
+                                    <option>Coding</option>
+                                    <option>Creative Writing</option>
+                                    <option>Business</option>
+                                    <option>Art / Image Gen</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tone</label>
+                                <select 
+                                    className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={genInputs.tone}
+                                    onChange={(e) => setGenInputs({...genInputs, tone: e.target.value})}
+                                >
+                                    <option value="">Select Tone</option>
+                                    <option>Professional</option>
+                                    <option>Friendly</option>
+                                    <option>Witty</option>
+                                    <option>Urgent</option>
+                                    <option>Academic</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Target Audience</label>
+                                <select 
+                                    className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={genInputs.audience}
+                                    onChange={(e) => setGenInputs({...genInputs, audience: e.target.value})}
+                                >
+                                    <option value="">Select Audience</option>
+                                    <option>Beginners</option>
+                                    <option>Experts</option>
+                                    <option>Students</option>
+                                    <option>Executives</option>
+                                    <option>Developers</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="mb-6">
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Purpose</label>
+                            <input 
+                                type="text" 
+                                placeholder="e.g., Generate marketing copy for a coffee brand, Create a Python script for scraping..."
+                                className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-400"
+                                value={genInputs.purpose}
+                                onChange={(e) => setGenInputs({...genInputs, purpose: e.target.value})}
+                            />
+                        </div>
+
+                        <div className="mb-8">
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Additional Details (Optional)</label>
+                            <textarea 
+                                placeholder="Any specific requirements, constraints, or context..."
+                                className="w-full h-24 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-400 resize-none"
+                                value={genInputs.details}
+                                onChange={(e) => setGenInputs({...genInputs, details: e.target.value})}
+                            ></textarea>
+                        </div>
+
+                        <button 
+                            onClick={handleGeneratePrompt}
+                            disabled={!genInputs.purpose || isGenerating}
+                            className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-lg shadow-lg shadow-blue-500/25 flex items-center justify-center gap-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isGenerating ? (
+                                <>
+                                    <span className="size-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                    Generating Expert Prompt...
+                                </>
+                            ) : (
+                                <>
+                                    <span className="material-symbols-outlined">auto_awesome</span>
+                                    Generate Prompt
+                                </>
+                            )}
+                        </button>
+
+                        {/* Result Area */}
+                        {generatedPrompt && (
+                            <div className="mt-8 pt-8 border-t border-slate-200 dark:border-slate-700 animate-fadeIn">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h4 className="font-bold text-slate-900 dark:text-white">Generated Prompt</h4>
+                                    <button 
+                                        onClick={handleCopyGenerated}
+                                        className="text-xs font-bold text-blue-600 hover:text-blue-500 flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg transition-colors"
+                                    >
+                                        <span className="material-symbols-outlined text-sm">content_copy</span> Copy
+                                    </button>
+                                </div>
+                                <div className="bg-slate-900 rounded-xl p-5 border border-slate-700 relative group">
+                                    <pre className="text-slate-300 font-mono text-sm whitespace-pre-wrap leading-relaxed">
+                                        {generatedPrompt}
+                                    </pre>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
 
       </section>
