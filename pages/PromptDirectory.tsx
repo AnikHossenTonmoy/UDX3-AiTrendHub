@@ -27,22 +27,37 @@ const PromptDirectory = () => {
   const generatorRef = useRef<HTMLDivElement>(null);
   const [isGeneratorVisible, setIsGeneratorVisible] = useState(false);
 
+  // --- Featured Section Animation State ---
+  const featuredRef = useRef<HTMLDivElement>(null);
+  const [isFeaturedVisible, setIsFeaturedVisible] = useState(false);
+
   useEffect(() => {
-    const observer = new IntersectionObserver(
+    // Observer for Generator Section
+    const generatorObserver = new IntersectionObserver(
       ([entry]) => {
         setIsGeneratorVisible(entry.isIntersecting);
       },
-      { threshold: 0.2 } // Trigger when 20% visible
+      { threshold: 0.2 }
+    );
+
+    // Observer for Featured Cards Section
+    const featuredObserver = new IntersectionObserver(
+      ([entry]) => {
+        setIsFeaturedVisible(entry.isIntersecting);
+      },
+      { threshold: 0.15 } // Trigger when 15% visible
     );
 
     if (generatorRef.current) {
-      observer.observe(generatorRef.current);
+      generatorObserver.observe(generatorRef.current);
+    }
+    if (featuredRef.current) {
+        featuredObserver.observe(featuredRef.current);
     }
 
     return () => {
-      if (generatorRef.current) {
-        observer.unobserve(generatorRef.current);
-      }
+      if (generatorRef.current) generatorObserver.unobserve(generatorRef.current);
+      if (featuredRef.current) featuredObserver.unobserve(featuredRef.current);
     };
   }, []);
 
@@ -57,6 +72,58 @@ const PromptDirectory = () => {
     { id: 'Art', label: 'Midjourney & Art' },
     { id: 'Social Media', label: 'Social Media' },
     { id: 'Productivity', label: 'Productivity' }
+  ];
+
+  // Featured Categories Data
+  const FEATURED_CATEGORIES = [
+    {
+      title: "Digital Marketing & SEO",
+      icon: "trending_up",
+      count: "2,800+",
+      description: "Comprehensive marketing strategies, SEO optimization, and digital growth tactics.",
+      color: "bg-blue-500", 
+      popular: true
+    },
+    {
+      title: "Social-Media Strategy",
+      icon: "chat_bubble",
+      count: "2,800+",
+      description: "Content creation, engagement strategies, and platform-specific optimization.",
+      color: "bg-pink-500",
+      popular: true
+    },
+    {
+      title: "Branding & Copywriting",
+      icon: "sell",
+      count: "2,800+",
+      description: "Brand development, copywriting, and creative content strategies.",
+      color: "bg-green-500",
+      popular: true
+    },
+    {
+      title: "Programming & Code",
+      icon: "code",
+      count: "5,700+",
+      description: "Code development, debugging assistance, and software architecture guidance.",
+      color: "bg-indigo-500",
+      popular: true
+    },
+    {
+      title: "Business & Startup",
+      icon: "business_center",
+      count: "3,750+",
+      description: "Business strategy, startup guidance, and entrepreneurial development.",
+      color: "bg-orange-500",
+      popular: true
+    },
+    {
+      title: "Creative Arts",
+      icon: "palette",
+      count: "2,800+",
+      description: "Artistic inspiration, creative writing, and innovative design concepts.",
+      color: "bg-fuchsia-500",
+      popular: true
+    }
   ];
 
   // Logic: Filtering
@@ -120,6 +187,87 @@ const PromptDirectory = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] transition-colors font-sans selection:bg-blue-500/30">
       
+      {/* CSS for Featured Cards (New Design + Animations) */}
+      <style>{`
+        .uiverse-card {
+          width: 100%;
+          height: 100%;
+          min-height: 250px;
+          background: transparent;
+          position: relative;
+          display: flex;
+          place-content: center;
+          place-items: center;
+          overflow: hidden;
+          border-radius: 20px;
+          opacity: 0; /* Hidden initially, controlled by animation */
+          transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
+        }
+
+        .uiverse-card::before {
+          content: '';
+          position: absolute;
+          width: 200%; 
+          height: 200%;
+          background-image: linear-gradient(180deg, rgb(0, 183, 255), rgb(255, 48, 255));
+          animation: uiverse-rotBGimg 3s linear infinite;
+          transition: all 0.2s linear;
+          z-index: 0;
+        }
+
+        @keyframes uiverse-rotBGimg {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        .uiverse-card::after {
+          content: '';
+          position: absolute;
+          background: rgba(7, 24, 46, 0.85);
+          backdrop-filter: blur(10px);
+          inset: 2px;
+          border-radius: 18px;
+          z-index: 1;
+        }
+        
+        .uiverse-content {
+          position: relative;
+          z-index: 2;
+          width: 100%;
+          height: 100%;
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+        }
+
+        /* Hover Animation: Popup & Glow */
+        .uiverse-card:hover {
+            transform: scale(1.05) !important; 
+            box-shadow: 0 0 30px rgba(0, 183, 255, 0.6);
+            z-index: 10;
+        }
+
+        /* Scroll Entrance Animation */
+        .animate-popIn {
+           animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Scroll Exit Animation */
+        .animate-fadeOut {
+           animation: fadeOut 0.5s ease forwards;
+        }
+
+        @keyframes popIn {
+          0% { opacity: 0; transform: scale(0.5) translateY(100px); }
+          100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        @keyframes fadeOut {
+          0% { opacity: 1; transform: scale(1) translateY(0); }
+          100% { opacity: 0; transform: scale(0.9) translateY(50px); }
+        }
+      `}</style>
+
       {/* HERO SECTION - GALAXY STYLE */}
       <section className="relative pt-32 pb-20 px-6 overflow-hidden" onMouseMove={handleMouseMove}>
         {/* Galaxy Background Effects */}
@@ -385,6 +533,75 @@ const PromptDirectory = () => {
                 </div>
             )}
         </div>
+
+        {/* --- FEATURED CATEGORIES SECTION --- */}
+        <section className="py-24 px-6 relative overflow-hidden">
+            {/* Ambient Background Glow */}
+            <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-green-500/10 rounded-full blur-[128px] pointer-events-none"></div>
+            <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[128px] pointer-events-none"></div>
+
+            <div className="relative z-10 max-w-7xl mx-auto">
+                {/* Section Header */}
+                <div className="text-center mb-16">
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-green-500/30 bg-green-500/10 mb-6">
+                        <span className="material-symbols-outlined text-green-500 text-[18px]">dataset</span>
+                        <span className="text-xs font-bold text-green-500 uppercase tracking-widest">Featured Categories</span>
+                    </div>
+                    <h2 className="text-4xl md:text-5xl font-display font-bold text-slate-900 dark:text-white mb-4">
+                        FEATURED <span className="text-green-500">CATEGORIES</span>
+                    </h2>
+                    <p className="text-slate-500 dark:text-slate-400 text-lg max-w-2xl mx-auto">
+                        Explore our most popular categories with thousands of optimized prompt sequences.
+                    </p>
+                </div>
+
+                {/* Cards Grid with Scroll Animation */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" ref={featuredRef}>
+                    {FEATURED_CATEGORIES.map((category, index) => (
+                        <div 
+                            key={index} 
+                            className={`uiverse-card ${isFeaturedVisible ? 'animate-popIn' : 'animate-fadeOut'}`}
+                            style={{ 
+                                animationDelay: isFeaturedVisible ? `${index * 150}ms` : `${index * 50}ms`,
+                                animationFillMode: 'forwards'
+                            }}
+                        >
+                            {/* Card Content Wrapper */}
+                            <div className="uiverse-content">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className={`size-12 rounded-2xl ${category.color} flex items-center justify-center shadow-lg shadow-${category.color.replace('bg-', '')}/30`}>
+                                        <span className="material-symbols-outlined text-white text-[24px]">{category.icon}</span>
+                                    </div>
+                                    {category.popular && (
+                                        <span className="bg-amber-500 text-black text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">Popular</span>
+                                    )}
+                                </div>
+                                
+                                <h3 className="text-xl font-bold text-white mb-2">{category.title}</h3>
+                                
+                                <div className="mb-2">
+                                    <span className="inline-block bg-slate-800/80 border border-slate-700 text-blue-400 text-xs font-bold px-3 py-1 rounded-full">
+                                        {category.count}
+                                    </span>
+                                </div>
+
+                                <p className="text-slate-300 text-xs leading-relaxed mb-4 flex-1 line-clamp-2">
+                                    {category.description}
+                                </p>
+
+                                <button 
+                                    onClick={() => setActiveCategory(category.title.split(' ')[0])}
+                                    className="flex items-center gap-2 text-green-400 font-bold text-sm hover:text-green-300 transition-colors mt-auto group"
+                                >
+                                    Access AI Prompts
+                                    <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </section>
 
       </section>
 
