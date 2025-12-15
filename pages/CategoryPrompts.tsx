@@ -23,20 +23,56 @@ const CategoryPrompts = () => {
           case 'social-media':
               return {
                   title: 'Social Media Strategy Prompts',
-                  subtitle: 'Viral hooks, engagement tactics, and content calendars for all major platforms.',
-                  badge: '800+ Strategy Prompts',
-                  filters: ['Instagram', 'LinkedIn', 'Twitter/X', 'TikTok', 'YouTube', 'Facebook', 'Pinterest', 'Content Calendar', 'Viral Hooks']
+                  subtitle: 'Viral hooks, engagement tactics, and content calendars for all major platforms including TikTok, Instagram, and LinkedIn.',
+                  badge: '800+ Strategy Prompts Available',
+                  filters: ['Instagram', 'LinkedIn', 'Twitter/X', 'TikTok', 'YouTube', 'Facebook', 'Pinterest', 'Content Calendar', 'Viral Hooks', 'Engagement', 'Influencer Outreach']
               };
           case 'coding':
               return {
                   title: 'Programming & Code Prompts',
-                  subtitle: 'Generate code, debug errors, and architect systems with expert developer prompts.',
-                  badge: '5,000+ Coding Prompts',
-                  filters: ['Python', 'JavaScript', 'React', 'HTML/CSS', 'SQL', 'Debugging', 'System Design', 'API Integration']
+                  subtitle: 'Generate code, debug errors, and architect systems with expert developer prompts for Python, JS, React, and more.',
+                  badge: '5,000+ Coding Prompts Available',
+                  filters: ['Python', 'JavaScript', 'React', 'HTML/CSS', 'SQL', 'Debugging', 'System Design', 'API Integration', 'DevOps', 'Data Science', 'Web Scraping']
+              };
+          case 'business':
+              return {
+                  title: 'Business & Startup Prompts',
+                  subtitle: 'Accelerate your business growth with prompts for planning, strategy, management, and scaling operations.',
+                  badge: '3,000+ Business Prompts Available',
+                  filters: ['Business Plan', 'Startup', 'Management', 'Strategy', 'Sales', 'Productivity', 'Finance', 'HR', 'Pitch Decks', 'Market Research']
+              };
+          case 'branding':
+              return {
+                  title: 'Branding & Copywriting Prompts',
+                  subtitle: 'Craft compelling brand stories, taglines, and persuasive copy that converts visitors into loyal customers.',
+                  badge: '2,500+ Branding Prompts Available',
+                  filters: ['Copywriting', 'Brand Identity', 'Storytelling', 'Taglines', 'Product Descriptions', 'Email Copy', 'Ad Copy', 'Landing Pages', 'Press Releases']
+              };
+          case 'art':
+          case 'image-generation':
+              return {
+                  title: 'AI Image Generation Prompts',
+                  subtitle: 'Unleash your visual creativity with high-fidelity prompts for Midjourney, DALL-E 3, Stable Diffusion, and Adobe Firefly.',
+                  badge: '6,600+ Art Prompts Available',
+                  filters: ['Midjourney', 'DALL-E 3', 'Stable Diffusion', 'Photorealistic', 'Anime Style', '3D Render', 'Logo Design', 'Concept Art', 'Cyberpunk', 'Cinematic', 'Vector Art']
+              };
+          case 'video-generation':
+              return {
+                  title: 'AI Video Generation Prompts',
+                  subtitle: 'Create cinematic videos, animations, and dynamic scenes with prompts optimized for Sora, Runway Gen-2, and Pika Labs.',
+                  badge: '7,700+ Video Prompts Available',
+                  filters: ['Sora', 'Runway Gen-2', 'Pika Labs', 'Cinematic', 'Animation', 'Drone Shot', 'Time-Lapse', 'Slow Motion', 'Character Action', 'Abstract', 'Commercial']
+              };
+          case 'music-generation':
+              return {
+                  title: 'AI Music Generation Prompts',
+                  subtitle: 'Compose original soundtracks, beats, and songs with prompts designed for Suno, Udio, and other AI audio tools.',
+                  badge: '4,000+ Audio Prompts Available',
+                  filters: ['Suno', 'Udio', 'Lo-Fi', 'Orchestral', 'Electronic', 'Jazz', 'Rock', 'Ambient', 'Hip Hop', 'Sound Effects', 'Voiceover']
               };
           default:
               return {
-                  title: `${id?.replace('-', ' ')} Prompts`,
+                  title: `${id?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} Prompts`,
                   subtitle: 'Explore our curated collection of AI prompts.',
                   badge: 'Professional Prompts',
                   filters: []
@@ -55,6 +91,18 @@ const CategoryPrompts = () => {
           matchesCategory = p.category === 'Marketing' || p.category === 'SEO' || p.category === 'Business';
       } else if (categoryId === 'coding') {
           matchesCategory = p.category === 'Coding';
+      } else if (categoryId === 'social-media') {
+          matchesCategory = p.category === 'Social Media' || p.category === 'Marketing';
+      } else if (categoryId === 'branding') {
+          matchesCategory = p.category === 'Branding' || p.category === 'Writing' || p.category === 'Marketing';
+      } else if (categoryId === 'business') {
+          matchesCategory = p.category === 'Business' || p.category === 'Productivity';
+      } else if (categoryId === 'art' || categoryId === 'image-generation') {
+          matchesCategory = p.category === 'Art' || p.category === 'Image Generation';
+      } else if (categoryId === 'video-generation') {
+          matchesCategory = p.category === 'Video Generation';
+      } else if (categoryId === 'music-generation') {
+          matchesCategory = p.category === 'Audio Generation';
       } else {
           // Fallback fuzzy match
           matchesCategory = p.category.toLowerCase().includes((categoryId || '').replace('-', ' '));
@@ -65,8 +113,7 @@ const CategoryPrompts = () => {
                             p.content.toLowerCase().includes(searchQuery.toLowerCase());
       
       // Sub Filter Match (Mock logic - in real app, tags would need to align perfectly)
-      // For now, we show all if 'All Prompts' or just filter by search
-      const matchesSubFilter = activeSubFilter === 'All Prompts' ? true : true; // Keep simple for now as prompts tags vary
+      const matchesSubFilter = activeSubFilter === 'All Prompts' ? true : true; // Simplified for demo
 
       return matchesCategory && matchesSearch && matchesSubFilter;
   });
@@ -83,12 +130,25 @@ const CategoryPrompts = () => {
         {/* Background Gradient */}
         <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-blue-900/20 to-transparent pointer-events-none"></div>
 
-        <div className="max-w-7xl mx-auto px-6 pt-12 relative z-10">
+        <div className="max-w-7xl mx-auto px-6 pt-8 relative z-10">
+            {/* Back Button */}
+            <button 
+                onClick={() => navigate('/prompts')}
+                className="mb-8 flex items-center gap-2 text-slate-400 hover:text-white transition-colors group"
+            >
+                <div className="p-2 rounded-full bg-slate-800 group-hover:bg-slate-700 transition-colors">
+                    <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+                </div>
+                <span className="text-sm font-bold uppercase tracking-wider">Back to Categories</span>
+            </button>
+
             {/* Header */}
             <div className="text-center mb-16">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 mb-6">
-                    <span className="material-symbols-outlined text-blue-400 text-[18px]">trending_up</span>
-                    <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">{categoryInfo.title.split('&')[0]}</span>
+                    <span className="material-symbols-outlined text-blue-400 text-[18px]">
+                        {categoryId?.includes('video') ? 'videocam' : categoryId?.includes('music') ? 'music_note' : categoryId?.includes('image') || categoryId === 'art' ? 'image' : 'trending_up'}
+                    </span>
+                    <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">{categoryInfo.title.split('Prompts')[0]}</span>
                 </div>
                 
                 <h1 className="text-5xl md:text-6xl font-display font-bold text-white mb-6 tracking-tight">
@@ -126,7 +186,7 @@ const CategoryPrompts = () => {
                         >
                             {/* Simple icon mapping based on index/random for visual flair */}
                             <span className="mr-2 text-blue-500">
-                                {i % 4 === 0 ? '📈' : i % 4 === 1 ? '✍️' : i % 4 === 2 ? '📧' : '🔍'}
+                                {i % 4 === 0 ? '✨' : i % 4 === 1 ? '🚀' : i % 4 === 2 ? '💡' : '🔍'}
                             </span>
                             {filter}
                         </button>

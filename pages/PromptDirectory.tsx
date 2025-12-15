@@ -175,7 +175,7 @@ const PromptDirectory = () => {
       description: "Visual content creation for DALL-E, Midjourney, Stable Diffusion, and other AI image generators.",
       color: "bg-purple-500",
       popular: true,
-      filter: "Art"
+      route: "image-generation"
     },
     {
       title: "Video Generator Prompts",
@@ -184,7 +184,7 @@ const PromptDirectory = () => {
       description: "Video content creation for Sora, RunwayML, Pika, and other AI video generators.",
       color: "bg-blue-500",
       popular: true,
-      filter: "Video"
+      route: "video-generation"
     },
     {
       title: "Music Generator Prompts",
@@ -193,7 +193,7 @@ const PromptDirectory = () => {
       description: "Audio content creation for Suno, Udio, and other AI music generation platforms.",
       color: "bg-teal-500",
       popular: true,
-      filter: "Audio"
+      route: "music-generation"
     }
   ];
 
@@ -777,7 +777,7 @@ const PromptDirectory = () => {
                                 </p>
 
                                 <button 
-                                    onClick={() => setActiveCategory(category.filter || 'All')}
+                                    onClick={() => handleCategoryClick(category)}
                                     className="flex items-center gap-2 text-blue-400 font-bold text-sm hover:text-blue-300 transition-colors mt-auto group"
                                 >
                                     Access AI Prompts
