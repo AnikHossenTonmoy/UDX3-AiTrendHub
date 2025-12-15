@@ -102,6 +102,26 @@ const ThemeToggle = () => {
         .toggle-input:checked + .toggle .toggle-circle.right {
           transform: scale(1);
         }
+        
+        .toggle-icon {
+          transition: fill .4s;
+        }
+
+        .toggle-icon.on {
+          fill: var(--inactive-color);
+        }
+
+        .toggle-input:checked + .toggle .toggle-icon.on {
+          fill: #fff;
+        }
+
+        .toggle-icon.off {
+          fill: #eaeaec;
+        }
+
+        .toggle-input:checked + .toggle .toggle-icon.off {
+          fill: var(--active-color);
+        }
       `}</style>
       <div className="toggle-container" title="Toggle Dark/Light Mode">
         <input 
