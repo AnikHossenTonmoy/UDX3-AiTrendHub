@@ -4,6 +4,30 @@ import { useNavigate } from 'react-router-dom';
 import { useData } from '../context/DataContext';
 import { GeminiBackend } from '../services/GeminiBackend';
 
+// --- Animated Number Component for "How It Works" ---
+const AnimatedNumber = ({ number, isHovered }: { number: string; isHovered: boolean }) => {
+  const [display, setDisplay] = useState(number);
+  
+  useEffect(() => {
+    if (isHovered) {
+      let count = 0;
+      const interval = setInterval(() => {
+        setDisplay(Math.floor(Math.random() * 99).toString().padStart(2, '0'));
+        count++;
+        if (count > 8) { // Run for a few frames
+          clearInterval(interval);
+          setDisplay(number);
+        }
+      }, 40); // Fast speed
+      return () => clearInterval(interval);
+    } else {
+      setDisplay(number);
+    }
+  }, [isHovered, number]);
+
+  return <span>{display}</span>;
+};
+
 const PromptDirectory = () => {
   const navigate = useNavigate();
   const { prompts } = useData();
@@ -31,6 +55,10 @@ const PromptDirectory = () => {
   const featuredRef = useRef<HTMLDivElement>(null);
   const [isFeaturedVisible, setIsFeaturedVisible] = useState(false);
 
+  // --- Creation Section Animation State ---
+  const creationRef = useRef<HTMLDivElement>(null);
+  const [isCreationVisible, setIsCreationVisible] = useState(false);
+
   useEffect(() => {
     // Observer for Generator Section
     const generatorObserver = new IntersectionObserver(
@@ -43,21 +71,27 @@ const PromptDirectory = () => {
     // Observer for Featured Cards Section
     const featuredObserver = new IntersectionObserver(
       ([entry]) => {
-        setIsFeaturedVisible(entry.isIntersecting);
+        if (entry.isIntersecting) setIsFeaturedVisible(true);
       },
-      { threshold: 0.15 } // Trigger when 15% visible
+      { threshold: 0.15 }
     );
 
-    if (generatorRef.current) {
-      generatorObserver.observe(generatorRef.current);
-    }
-    if (featuredRef.current) {
-        featuredObserver.observe(featuredRef.current);
-    }
+    // Observer for Creation Section
+    const creationObserver = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setIsCreationVisible(true);
+      },
+      { threshold: 0.15 }
+    );
+
+    if (generatorRef.current) generatorObserver.observe(generatorRef.current);
+    if (featuredRef.current) featuredObserver.observe(featuredRef.current);
+    if (creationRef.current) creationObserver.observe(creationRef.current);
 
     return () => {
       if (generatorRef.current) generatorObserver.unobserve(generatorRef.current);
       if (featuredRef.current) featuredObserver.unobserve(featuredRef.current);
+      if (creationRef.current) creationObserver.unobserve(creationRef.current);
     };
   }, []);
 
@@ -126,6 +160,73 @@ const PromptDirectory = () => {
     }
   ];
 
+  // Creation Categories Data
+  const CREATION_CATEGORIES = [
+    {
+      title: "Image Generator Prompts",
+      icon: "image",
+      count: "6,600+",
+      description: "Visual content creation for DALL-E, Midjourney, Stable Diffusion, and other AI image generators.",
+      color: "bg-purple-500",
+      popular: true,
+      filter: "Art"
+    },
+    {
+      title: "Video Generator Prompts",
+      icon: "videocam",
+      count: "7,700+",
+      description: "Video content creation for Sora, RunwayML, Pika, and other AI video generators.",
+      color: "bg-blue-500",
+      popular: true,
+      filter: "Video"
+    },
+    {
+      title: "Music Generator Prompts",
+      icon: "music_note",
+      count: "4,000+",
+      description: "Audio content creation for Suno, Udio, and other AI music generation platforms.",
+      color: "bg-teal-500",
+      popular: true,
+      filter: "Audio"
+    }
+  ];
+
+  // System Advantages Data
+  const ADVANTAGES = [
+    {
+      title: "Advanced AI Database",
+      desc: "Comprehensive AI-powered prompt database with machine learning optimization for maximum output quality.",
+      icon: "psychology",
+      badge: "ADVANCED"
+    },
+    {
+      title: "Lightning Fast Access",
+      desc: "Instant prompt delivery with zero-latency access to our distributed database infrastructure.",
+      icon: "bolt",
+      badge: "INSTANT"
+    },
+    {
+      title: "Expert-Crafted Content",
+      desc: "Each prompt engineered by AI specialists using advanced prompt engineering methodologies.",
+      icon: "star",
+      badge: "EXPERT"
+    },
+    {
+      title: "Continuous Updates",
+      desc: "Self-improving system that adapts to emerging AI capabilities and user feedback patterns.",
+      icon: "update",
+      badge: "ADAPTIVE"
+    }
+  ];
+
+  // How It Works Data
+  const HOW_IT_WORKS = [
+    { number: "01", title: "Browse Categories", desc: "Navigate our organized database to locate optimal prompt sequences for your needs.", icon: "manage_search" },
+    { number: "02", title: "Search & Filter", desc: "Utilize advanced search algorithms to identify perfect prompt configurations.", icon: "filter_list" },
+    { number: "03", title: "Copy & Customize", desc: "Copy and customize prompt data for your specific AI implementation requirements.", icon: "content_copy" },
+    { number: "04", title: "Execute & Optimize", desc: "Deploy prompts to your AI systems and achieve superior performance metrics.", icon: "rocket_launch" }
+  ];
+
   // Logic: Filtering
   const filteredPrompts = prompts.filter(p => {
     const matchesCategory = activeCategory === 'All' || p.category === activeCategory || (activeCategory === 'Art' && (p.category === 'Image Generation' || p.category === 'Art'));
@@ -183,6 +284,9 @@ const PromptDirectory = () => {
         (card as HTMLElement).style.setProperty('--mouse-y', `${y}px`);
     }
   };
+
+  // Hover state for How it Works cards to trigger countdown
+  const [hoveredStep, setHoveredStep] = useState<number | null>(null);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] transition-colors font-sans selection:bg-blue-500/30">
@@ -597,6 +701,143 @@ const PromptDirectory = () => {
                                     <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
                                 </button>
                             </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </section>
+
+        {/* --- AI CREATION PROMPTS SECTION --- */}
+        <section className="py-24 px-6 relative overflow-hidden bg-slate-900/20">
+            {/* Ambient Background Glow */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[300px] bg-purple-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+
+            <div className="relative z-10 max-w-7xl mx-auto">
+                {/* Section Header */}
+                <div className="text-center mb-16">
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 mb-6">
+                        <span className="material-symbols-outlined text-purple-400 text-[18px]">auto_awesome</span>
+                        <span className="text-xs font-bold text-purple-400 uppercase tracking-widest">AI Creation Tools</span>
+                    </div>
+                    <h2 className="text-4xl md:text-5xl font-display font-bold text-slate-900 dark:text-white mb-4">
+                        AI <span className="text-pink-500">CREATION PROMPTS</span>
+                    </h2>
+                    <p className="text-slate-500 dark:text-slate-400 text-lg max-w-2xl mx-auto">
+                        Unleash your creativity with specialized prompts for AI-powered content generation across images, videos, and music.
+                    </p>
+                </div>
+
+                {/* Creation Cards Grid with Scroll Animation */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8" ref={creationRef}>
+                    {CREATION_CATEGORIES.map((category, index) => (
+                        <div 
+                            key={index} 
+                            className={`uiverse-card ${isCreationVisible ? 'animate-popIn' : 'animate-fadeOut'}`}
+                            style={{ 
+                                animationDelay: isCreationVisible ? `${index * 150}ms` : `${index * 50}ms`,
+                                animationFillMode: 'forwards'
+                            }}
+                        >
+                            {/* Card Content Wrapper */}
+                            <div className="uiverse-content">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className={`size-12 rounded-2xl ${category.color} flex items-center justify-center shadow-lg shadow-${category.color.replace('bg-', '')}/30`}>
+                                        <span className="material-symbols-outlined text-white text-[24px]">{category.icon}</span>
+                                    </div>
+                                    {category.popular && (
+                                        <span className="bg-amber-500 text-black text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">Popular</span>
+                                    )}
+                                </div>
+                                
+                                <h3 className="text-xl font-bold text-white mb-2">{category.title}</h3>
+                                
+                                <div className="mb-2">
+                                    <span className="inline-block bg-slate-800/80 border border-slate-700 text-blue-400 text-xs font-bold px-3 py-1 rounded-full">
+                                        {category.count}
+                                    </span>
+                                </div>
+
+                                <p className="text-slate-300 text-xs leading-relaxed mb-4 flex-1 line-clamp-3">
+                                    {category.description}
+                                </p>
+
+                                <button 
+                                    onClick={() => setActiveCategory(category.filter || 'All')}
+                                    className="flex items-center gap-2 text-blue-400 font-bold text-sm hover:text-blue-300 transition-colors mt-auto group"
+                                >
+                                    Access AI Prompts
+                                    <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </section>
+
+        {/* --- SYSTEM ADVANTAGES SECTION --- */}
+        <section className="py-24 px-6 relative bg-[#07182E] overflow-hidden">
+            <div className="relative z-10 max-w-7xl mx-auto">
+                <h2 className="text-4xl md:text-6xl font-display font-bold text-white text-center mb-20 tracking-tight">
+                    SYSTEM <span className="text-teal-400">ADVANTAGES</span>
+                </h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    {ADVANTAGES.map((adv, i) => (
+                        <div key={i} className="group relative bg-[#0B0F19] rounded-[2rem] p-8 border border-white/5 hover:border-teal-500/30 transition-all duration-300 hover:-translate-y-2">
+                            {/* Icon Container */}
+                            <div className="mb-6 relative">
+                                <span className="absolute -top-6 -right-6 bg-teal-500/20 text-teal-400 text-[10px] font-bold px-2 py-1 rounded-bl-xl border-l border-b border-teal-500/20">
+                                    {adv.badge}
+                                </span>
+                                <div className="size-16 rounded-2xl bg-teal-500/10 flex items-center justify-center text-teal-400 group-hover:scale-110 group-hover:rotate-[360deg] group-hover:shadow-[0_0_30px_rgba(45,212,191,0.3)] transition-all duration-700 ease-out">
+                                    <span className="material-symbols-outlined text-4xl">{adv.icon}</span>
+                                </div>
+                            </div>
+                            
+                            <h3 className="text-xl font-bold text-white mb-3">{adv.title}</h3>
+                            <p className="text-slate-400 text-sm leading-relaxed">
+                                {adv.desc}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </section>
+
+        {/* --- HOW IT WORKS SECTION --- */}
+        <section className="py-24 px-6 relative bg-black">
+            <div className="relative z-10 max-w-7xl mx-auto">
+                <h2 className="text-4xl md:text-6xl font-display font-bold text-white text-center mb-20 tracking-tight">
+                    HOW IT <span className="text-emerald-400">WORKS</span>
+                </h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 relative">
+                    {/* Connecting Line (Desktop) */}
+                    <div className="hidden lg:block absolute top-12 left-[12%] right-[12%] h-0.5 bg-gradient-to-r from-emerald-500/0 via-emerald-500/30 to-emerald-500/0 border-t border-dashed border-emerald-500/30 z-0"></div>
+
+                    {HOW_IT_WORKS.map((step, i) => (
+                        <div 
+                            key={i} 
+                            className="group relative z-10 text-center"
+                            onMouseEnter={() => setHoveredStep(i)}
+                            onMouseLeave={() => setHoveredStep(null)}
+                        >
+                            {/* Circle Step Number */}
+                            <div className="mx-auto size-24 rounded-full bg-[#0B0F19] border-4 border-emerald-500/20 group-hover:border-emerald-500 flex items-center justify-center relative mb-8 transition-all duration-300 shadow-xl group-hover:shadow-[0_0_40px_rgba(16,185,129,0.3)]">
+                                <span className="text-3xl font-bold text-white font-mono">
+                                    <AnimatedNumber number={step.number} isHovered={hoveredStep === i} />
+                                </span>
+                                {/* Small floating icon */}
+                                <div className="absolute -bottom-2 -right-2 size-10 rounded-full bg-emerald-600 flex items-center justify-center text-white shadow-lg border-4 border-black">
+                                    <span className="material-symbols-outlined text-sm">{step.icon}</span>
+                                </div>
+                            </div>
+
+                            <h3 className="text-xl font-bold text-white mb-3 group-hover:text-emerald-400 transition-colors">{step.title}</h3>
+                            <p className="text-slate-400 text-sm leading-relaxed max-w-xs mx-auto">
+                                {step.desc}
+                            </p>
                         </div>
                     ))}
                 </div>
