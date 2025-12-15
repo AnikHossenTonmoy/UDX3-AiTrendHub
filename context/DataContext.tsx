@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { Tool, Prompt, Video, User } from '../types';
 
@@ -118,8 +119,45 @@ const INITIAL_TOOLS: Tool[] = [
   createTool('prod-5', 'Beautiful.ai', 'https://beautiful.ai', 'Productivity', 'Presentation software that designs for you.', 'Paid'),
 ];
 
+// Helper to generate prompts
+const createPrompt = (id: string, title: string, category: string, desc: string): Prompt => ({
+    id, title, category, description: desc,
+    content: `Detailed prompt content for ${title}. Includes specific instructions, tone, and context for best results.`,
+    tags: [category, 'Business', 'Growth'],
+    views: Math.floor(Math.random() * 5000) + 500,
+    likes: Math.floor(Math.random() * 500) + 50,
+    author: { name: 'GrowthHacker', avatar: 'https://ui-avatars.com/api/?name=GH&background=random', handle: '@growth' },
+    model: 'GPT-4',
+    tool: 'ChatGPT',
+    difficulty: 'Intermediate',
+    status: 'Published',
+    date: 'Recently'
+});
+
 const INITIAL_PROMPTS: Prompt[] = [
-  // --- IMAGE GENERATION ---
+  // --- MARKETING & SEO (Batch 1) ---
+  createPrompt('mkt-1', 'Complete SEO Audit Checklist', 'Marketing', 'A comprehensive step-by-step checklist to audit any website for technical and on-page SEO issues.'),
+  createPrompt('mkt-2', 'Instagram Reels Strategy 2025', 'Marketing', 'Viral content strategy for Instagram Reels focusing on hook retention and algorithm triggers.'),
+  createPrompt('mkt-3', 'LinkedIn B2B Lead Gen', 'Marketing', 'Outreach scripts and content planning to generate high-quality B2B leads on LinkedIn.'),
+  createPrompt('mkt-4', 'Email Drip Campaign Sequence', 'Marketing', '5-part email welcome series designed to nurture leads and convert them into paying customers.'),
+  createPrompt('mkt-5', 'Google Ads Copy Generator', 'Marketing', 'Framework to generate high-CTR headlines and descriptions for Google Search Ads.'),
+  createPrompt('mkt-6', 'Blog Post Topic Ideation', 'Marketing', 'Generate 50 blog post ideas based on a seed keyword using semantic clustering.'),
+  createPrompt('mkt-7', 'Competitor Analysis Framework', 'Marketing', 'Prompt to analyze competitor strengths, weaknesses, and keyword gaps using AI.'),
+  createPrompt('mkt-8', 'Landing Page CRO Tips', 'Marketing', 'Analyze a landing page copy and suggest improvements for higher conversion rates.'),
+  createPrompt('mkt-9', 'TikTok Viral Scripts', 'Marketing', 'Script templates for 15-second TikTok videos that hook viewers in the first 3 seconds.'),
+  createPrompt('mkt-10', 'Press Release Writer', 'Marketing', 'Professional press release format for launching a new product or service.'),
+  createPrompt('mkt-11', 'YouTube Description Optimizer', 'Marketing', 'SEO-optimized YouTube video description template with timestamps and hashtags.'),
+  createPrompt('mkt-12', 'Facebook Ad Targeting', 'Marketing', 'Brainstorm detailed interest-based targeting options for Facebook Ad sets.'),
+  createPrompt('mkt-13', 'Influencer Outreach Template', 'Marketing', 'Cold DM scripts for reaching out to micro-influencers for brand collaborations.'),
+  createPrompt('mkt-14', 'Newsletter Content Plan', 'Marketing', 'Weekly newsletter content strategy to build authority and trust with subscribers.'),
+  createPrompt('mkt-15', 'Product Launch Strategy', 'Marketing', 'A 4-week timeline and checklist for a successful digital product launch.'),
+  createPrompt('mkt-16', 'Keyword Research Plan', 'SEO', 'Step-by-step guide to finding low-competition, high-volume keywords for a niche site.'),
+  createPrompt('mkt-17', 'Meta Description Creator', 'SEO', 'Generate click-worthy meta titles and descriptions for e-commerce product pages.'),
+  createPrompt('mkt-18', 'Twitter Thread Hook', 'Marketing', 'Write 10 viral hooks for Twitter threads that encourage retweets and engagement.'),
+  createPrompt('mkt-19', 'Customer Persona Builder', 'Marketing', 'Create detailed buyer personas including pain points, goals, and demographics.'),
+  createPrompt('mkt-20', 'Sales Funnel Architecture', 'Marketing', 'Map out a complete sales funnel from awareness to retention for a SaaS product.'),
+
+  // --- EXISTING PROMPTS ---
   {
     id: 'p-img-1',
     title: 'Ultra-Realistic Fantasy Portrait',
@@ -138,42 +176,6 @@ const INITIAL_PROMPTS: Prompt[] = [
     date: '1 day ago'
   },
   {
-    id: 'p-img-2',
-    title: 'Cyberpunk Cityscape',
-    description: 'Neon-soaked futuristic city street at night with rain reflections.',
-    content: 'A futuristic cyberpunk city street at night, heavy rain, neon lights reflecting on wet pavement, towering skyscrapers with holographic ads, cinematic composition, photorealistic, 8k resolution.',
-    category: 'Image Generation',
-    tags: ['Art', 'Sci-Fi', 'Cyberpunk', 'DALL-E 3'],
-    views: 8900,
-    likes: 560,
-    author: { name: 'NeonDreams', avatar: 'https://ui-avatars.com/api/?name=NeonDreams&background=random', handle: '@neondreams' },
-    model: 'DALL-E 3',
-    tool: 'DALL-E 3',
-    images: ['https://images.unsplash.com/photo-1534237710431-e2fc698436d0?q=80&w=600&auto=format&fit=crop'],
-    difficulty: 'Beginner',
-    status: 'Published',
-    date: '2 days ago'
-  },
-  {
-    id: 'p-img-3',
-    title: 'Minimalist Vector Logo',
-    description: 'Create a clean, modern vector logo for a tech startup.',
-    content: 'A flat vector logo for a technology startup named "Nexus", minimalist design, geometric shapes, shades of blue and white, clean lines, white background, high quality.',
-    category: 'Image Generation',
-    tags: ['Logo', 'Design', 'Minimalist'],
-    views: 15400,
-    likes: 1200,
-    author: { name: 'DesignPro', avatar: 'https://ui-avatars.com/api/?name=DesignPro&background=random', handle: '@designpro' },
-    model: 'Midjourney',
-    tool: 'Midjourney',
-    images: ['https://images.unsplash.com/photo-1626785774573-4b799314346d?q=80&w=600&auto=format&fit=crop'],
-    difficulty: 'Beginner',
-    status: 'Published',
-    date: '3 days ago'
-  },
-
-  // --- WRITING ---
-  {
     id: 'p-wrt-1',
     title: 'Compelling Blog Post Intro',
     description: 'Write a hook-filled introduction for an article about AI adoption.',
@@ -190,90 +192,6 @@ const INITIAL_PROMPTS: Prompt[] = [
     date: '1 week ago'
   },
   {
-    id: 'p-wrt-2',
-    title: 'Storytelling Framework',
-    description: 'Rewrite a boring business case study as a hero\'s journey story.',
-    content: 'Take the following business case study about a software migration and rewrite it using the "Hero\'s Journey" storytelling framework. The "Hero" is the client, the "Villain" is the legacy system, and the "Guide" is our consulting firm. Make it engaging and emotional.',
-    category: 'Writing',
-    tags: ['Storytelling', 'Business', 'Creative'],
-    views: 4100,
-    likes: 210,
-    author: { name: 'StoryTeller', avatar: 'https://ui-avatars.com/api/?name=StoryTeller&background=random', handle: '@storyteller' },
-    model: 'Claude 3',
-    tool: 'Claude 3',
-    difficulty: 'Advanced',
-    status: 'Published',
-    date: '5 days ago'
-  },
-  {
-    id: 'p-wrt-3',
-    title: 'Cold Email Outreach',
-    description: 'Generate a high-conversion cold email for B2B sales.',
-    content: 'Write a cold email to a VP of Marketing at a SaaS company offering them a new SEO tool. Use the PAS (Problem-Agitate-Solution) framework. Keep it under 150 words. Subject line should be catchy but not clickbaity.',
-    category: 'Writing',
-    tags: ['Sales', 'Email', 'Marketing'],
-    views: 9200,
-    likes: 650,
-    author: { name: 'SalesGuru', avatar: 'https://ui-avatars.com/api/?name=SalesGuru&background=random', handle: '@salesguru' },
-    model: 'GPT-4',
-    tool: 'ChatGPT',
-    difficulty: 'Intermediate',
-    status: 'Published',
-    date: '3 days ago'
-  },
-
-  // --- MARKETING & SEO ---
-  {
-    id: 'p-mkt-1',
-    title: '30-Day Social Media Calendar',
-    description: 'Create a month-long content plan for a coffee brand.',
-    content: 'Create a 30-day social media content calendar for a sustainable coffee brand. The platforms are Instagram and LinkedIn. Themes: Sustainability, Morning Routine, and Coffee Education. Output as a table with columns: Day, Platform, Content Idea, Caption Draft.',
-    category: 'Marketing',
-    tags: ['Social Media', 'Strategy', 'Planning'],
-    views: 11000,
-    likes: 900,
-    author: { name: 'SocialSavvy', avatar: 'https://ui-avatars.com/api/?name=SocialSavvy&background=random', handle: '@socialsavvy' },
-    model: 'GPT-4',
-    tool: 'ChatGPT',
-    difficulty: 'Intermediate',
-    status: 'Published',
-    date: '2 days ago'
-  },
-  {
-    id: 'p-seo-1',
-    title: 'SEO Keyword Strategy',
-    description: 'Generate long-tail keywords for a fitness blog.',
-    content: 'Act as an SEO expert. Generate a list of 20 long-tail keywords for a new blog about "Home Calisthenics Workouts". Sort them by search intent (Informational, Commercial, Transactional). For each keyword, suggest a blog post title.',
-    category: 'SEO',
-    tags: ['Keywords', 'Strategy', 'Ranking'],
-    views: 6700,
-    likes: 430,
-    author: { name: 'SEOWhiz', avatar: 'https://ui-avatars.com/api/?name=SEOWhiz&background=random', handle: '@seowhiz' },
-    model: 'GPT-4',
-    tool: 'ChatGPT',
-    difficulty: 'Intermediate',
-    status: 'Published',
-    date: '4 days ago'
-  },
-  {
-    id: 'p-mkt-2',
-    title: 'Product Launch Tweet Thread',
-    description: 'Write a viral Twitter thread for a new productivity app.',
-    content: 'Write a 10-tweet thread announcing the launch of "FocusFlow", a new AI productivity app. The hook should address the problem of distraction. Use emojis sparingly. Include a CTA in the final tweet. Tone: Exciting and revolutionary.',
-    category: 'Social Media',
-    tags: ['Twitter', 'Launch', 'Viral'],
-    views: 5500,
-    likes: 340,
-    author: { name: 'TweetMaster', avatar: 'https://ui-avatars.com/api/?name=TweetMaster&background=random', handle: '@tweetmaster' },
-    model: 'GPT-3.5',
-    tool: 'ChatGPT',
-    difficulty: 'Beginner',
-    status: 'Published',
-    date: '1 week ago'
-  },
-
-  // --- CODING ---
-  {
     id: 'p-code-1',
     title: 'Python Web Scraper',
     description: 'Script to scrape product prices using BeautifulSoup.',
@@ -289,104 +207,6 @@ const INITIAL_PROMPTS: Prompt[] = [
     status: 'Published',
     date: '2 weeks ago'
   },
-  {
-    id: 'p-code-2',
-    title: 'React Custom Hook: useFetch',
-    description: 'Create a reusable React hook for data fetching.',
-    content: 'Create a custom React hook named "useFetch" that accepts a URL. It should return data, loading state, and error state. Handle the component unmount cleanup using AbortController. Provide a usage example.',
-    category: 'Coding',
-    tags: ['React', 'JavaScript', 'Frontend'],
-    views: 9800,
-    likes: 780,
-    author: { name: 'ReactDev', avatar: 'https://ui-avatars.com/api/?name=ReactDev&background=random', handle: '@reactdev' },
-    model: 'GPT-4',
-    tool: 'ChatGPT',
-    difficulty: 'Intermediate',
-    status: 'Published',
-    date: '5 days ago'
-  },
-  {
-    id: 'p-code-3',
-    title: 'SQL Query Optimizer',
-    description: 'Optimize a slow SQL query for a large dataset.',
-    content: 'I have a slow SQL query: [INSERT QUERY HERE]. Act as a Database Administrator. Explain why it might be slow on a table with 1 million rows and rewrite it to be more efficient. Suggest indexes that should be added.',
-    category: 'Coding',
-    tags: ['SQL', 'Database', 'Performance'],
-    views: 4500,
-    likes: 310,
-    author: { name: 'DBAdmin', avatar: 'https://ui-avatars.com/api/?name=DBAdmin&background=random', handle: '@dbadmin' },
-    model: 'GPT-4',
-    tool: 'ChatGPT',
-    difficulty: 'Advanced',
-    status: 'Published',
-    date: '3 days ago'
-  },
-
-  // --- BUSINESS & PRODUCTIVITY ---
-  {
-    id: 'p-biz-1',
-    title: 'SWOT Analysis Generator',
-    description: 'Perform a SWOT analysis for a local restaurant.',
-    content: 'Act as a Business Consultant. Perform a SWOT Analysis (Strengths, Weaknesses, Opportunities, Threats) for a high-end Italian restaurant located in a busy downtown area facing rising food costs but high demand.',
-    category: 'Business',
-    tags: ['Strategy', 'Analysis', 'Consulting'],
-    views: 7800,
-    likes: 520,
-    author: { name: 'BizGuru', avatar: 'https://ui-avatars.com/api/?name=BizGuru&background=random', handle: '@bizguru' },
-    model: 'Claude 3',
-    tool: 'Claude 3',
-    difficulty: 'Beginner',
-    status: 'Published',
-    date: '4 days ago'
-  },
-  {
-    id: 'p-prod-1',
-    title: 'Excel Formula Expert',
-    description: 'Complex VLOOKUP and IF statement combination.',
-    content: 'I need an Excel formula that looks up a value in Column A of Sheet2. If found, return the value in Column B. If not found, check Column A of Sheet3. If still not found, return "Not Available". Explain how the formula works.',
-    category: 'Productivity',
-    tags: ['Excel', 'Data', 'Office'],
-    views: 13000,
-    likes: 950,
-    author: { name: 'ExcelWizard', avatar: 'https://ui-avatars.com/api/?name=ExcelWizard&background=random', handle: '@excelwizard' },
-    model: 'GPT-4',
-    tool: 'ChatGPT',
-    difficulty: 'Intermediate',
-    status: 'Published',
-    date: '1 week ago'
-  },
-  {
-    id: 'p-biz-2',
-    title: 'Job Interview Prep',
-    description: 'Simulate a job interview for a Project Manager role.',
-    content: 'Act as a hiring manager for a tech company. I am applying for a Senior Project Manager role. Ask me 5 tough behavioral interview questions one by one, waiting for my response before asking the next. After my response, give me feedback.',
-    category: 'Business',
-    tags: ['Career', 'Interview', 'Coaching'],
-    views: 8100,
-    likes: 600,
-    author: { name: 'CareerCoach', avatar: 'https://ui-avatars.com/api/?name=CareerCoach&background=random', handle: '@careercoach' },
-    model: 'GPT-4',
-    tool: 'ChatGPT',
-    difficulty: 'Intermediate',
-    status: 'Published',
-    date: '2 days ago'
-  },
-  {
-    id: 'p-learn-1',
-    title: 'Explain Quantum Physics',
-    description: 'Explain complex physics to a 5-year-old.',
-    content: 'Explain the concept of Quantum Entanglement to a 5-year-old using a simple analogy involving toys or socks. Keep it fun and under 100 words.',
-    category: 'Productivity',
-    tags: ['Education', 'Learning', 'Science'],
-    views: 6200,
-    likes: 480,
-    author: { name: 'ProfAI', avatar: 'https://ui-avatars.com/api/?name=ProfAI&background=random', handle: '@profai' },
-    model: 'GPT-3.5',
-    tool: 'ChatGPT',
-    difficulty: 'Beginner',
-    status: 'Published',
-    date: '3 weeks ago'
-  }
 ];
 
 const INITIAL_VIDEOS: Video[] = [
@@ -414,7 +234,7 @@ const INITIAL_USERS: User[] = [
 ];
 
 export const DataProvider = ({ children }: { children?: ReactNode }) => {
-  // LocalStorage Helper - Updated Keys to V2 to flush old data
+  // LocalStorage Helper - Updated Keys to V3 to flush old data and load new prompts
   const loadFromStorage = <T,>(key: string, fallback: T): T => {
     if (typeof window === 'undefined') return fallback;
     try {
@@ -426,19 +246,19 @@ export const DataProvider = ({ children }: { children?: ReactNode }) => {
     }
   };
 
-  const [tools, setTools] = useState<Tool[]>(() => loadFromStorage('trendhub_tools_v2', INITIAL_TOOLS));
-  const [prompts, setPrompts] = useState<Prompt[]>(() => loadFromStorage('trendhub_prompts_v2', INITIAL_PROMPTS));
-  const [videos, setVideos] = useState<Video[]>(() => loadFromStorage('trendhub_videos_v2', INITIAL_VIDEOS));
-  const [users, setUsers] = useState<User[]>(() => loadFromStorage('trendhub_users_v2', INITIAL_USERS));
+  const [tools, setTools] = useState<Tool[]>(() => loadFromStorage('trendhub_tools_v3', INITIAL_TOOLS));
+  const [prompts, setPrompts] = useState<Prompt[]>(() => loadFromStorage('trendhub_prompts_v3', INITIAL_PROMPTS));
+  const [videos, setVideos] = useState<Video[]>(() => loadFromStorage('trendhub_videos_v3', INITIAL_VIDEOS));
+  const [users, setUsers] = useState<User[]>(() => loadFromStorage('trendhub_users_v3', INITIAL_USERS));
   
   // Maintenance Mode State
   const [maintenanceMode, setMaintenanceModeState] = useState<boolean>(() => loadFromStorage('trendhub_maintenance_mode', false));
 
-  // Sync to LocalStorage - Updated Keys to V2
-  useEffect(() => { try { window.localStorage.setItem('trendhub_tools_v2', JSON.stringify(tools)); } catch (e) {} }, [tools]);
-  useEffect(() => { try { window.localStorage.setItem('trendhub_prompts_v2', JSON.stringify(prompts)); } catch (e) {} }, [prompts]);
-  useEffect(() => { try { window.localStorage.setItem('trendhub_videos_v2', JSON.stringify(videos)); } catch (e) {} }, [videos]);
-  useEffect(() => { try { window.localStorage.setItem('trendhub_users_v2', JSON.stringify(users)); } catch (e) {} }, [users]);
+  // Sync to LocalStorage - Updated Keys to V3
+  useEffect(() => { try { window.localStorage.setItem('trendhub_tools_v3', JSON.stringify(tools)); } catch (e) {} }, [tools]);
+  useEffect(() => { try { window.localStorage.setItem('trendhub_prompts_v3', JSON.stringify(prompts)); } catch (e) {} }, [prompts]);
+  useEffect(() => { try { window.localStorage.setItem('trendhub_videos_v3', JSON.stringify(videos)); } catch (e) {} }, [videos]);
+  useEffect(() => { try { window.localStorage.setItem('trendhub_users_v3', JSON.stringify(users)); } catch (e) {} }, [users]);
   
   useEffect(() => { try { window.localStorage.setItem('trendhub_maintenance_mode', JSON.stringify(maintenanceMode)); } catch (e) {} }, [maintenanceMode]);
 

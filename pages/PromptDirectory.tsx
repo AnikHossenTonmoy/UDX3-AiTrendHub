@@ -116,7 +116,8 @@ const PromptDirectory = () => {
       count: "2,800+",
       description: "Comprehensive marketing strategies, SEO optimization, and digital growth tactics.",
       color: "bg-blue-500", 
-      popular: true
+      popular: true,
+      route: "marketing-seo"
     },
     {
       title: "Social-Media Strategy",
@@ -124,7 +125,8 @@ const PromptDirectory = () => {
       count: "2,800+",
       description: "Content creation, engagement strategies, and platform-specific optimization.",
       color: "bg-pink-500",
-      popular: true
+      popular: true,
+      route: "social-media"
     },
     {
       title: "Branding & Copywriting",
@@ -132,7 +134,8 @@ const PromptDirectory = () => {
       count: "2,800+",
       description: "Brand development, copywriting, and creative content strategies.",
       color: "bg-green-500",
-      popular: true
+      popular: true,
+      route: "branding"
     },
     {
       title: "Programming & Code",
@@ -140,7 +143,8 @@ const PromptDirectory = () => {
       count: "5,700+",
       description: "Code development, debugging assistance, and software architecture guidance.",
       color: "bg-indigo-500",
-      popular: true
+      popular: true,
+      route: "coding"
     },
     {
       title: "Business & Startup",
@@ -148,7 +152,8 @@ const PromptDirectory = () => {
       count: "3,750+",
       description: "Business strategy, startup guidance, and entrepreneurial development.",
       color: "bg-orange-500",
-      popular: true
+      popular: true,
+      route: "business"
     },
     {
       title: "Creative Arts",
@@ -156,7 +161,8 @@ const PromptDirectory = () => {
       count: "2,800+",
       description: "Artistic inspiration, creative writing, and innovative design concepts.",
       color: "bg-fuchsia-500",
-      popular: true
+      popular: true,
+      route: "art"
     }
   ];
 
@@ -287,6 +293,15 @@ const PromptDirectory = () => {
 
   // Hover state for How it Works cards to trigger countdown
   const [hoveredStep, setHoveredStep] = useState<number | null>(null);
+
+  // Handle Category Card Click
+  const handleCategoryClick = (category: any) => {
+      if (category.route) {
+          navigate(`/prompts/category/${category.route}`);
+      } else {
+          setActiveCategory(category.title.split(' ')[0]);
+      }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] transition-colors font-sans selection:bg-blue-500/30">
@@ -694,7 +709,7 @@ const PromptDirectory = () => {
                                 </p>
 
                                 <button 
-                                    onClick={() => setActiveCategory(category.title.split(' ')[0])}
+                                    onClick={() => handleCategoryClick(category)}
                                     className="flex items-center gap-2 text-green-400 font-bold text-sm hover:text-green-300 transition-colors mt-auto group"
                                 >
                                     Access AI Prompts

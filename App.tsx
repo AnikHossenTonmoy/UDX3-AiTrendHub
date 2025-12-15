@@ -13,6 +13,7 @@ import Settings from './pages/Settings';
 import Login from './pages/Login';
 import PromptDirectory from './pages/PromptDirectory';
 import PromptDetails from './pages/PromptDetails';
+import CategoryPrompts from './pages/CategoryPrompts';
 import PublicTools from './pages/PublicTools';
 import ToolDetails from './pages/ToolDetails';
 import AdminPrompts from './pages/AdminPrompts';
@@ -86,6 +87,7 @@ const AppContent = () => {
          <Route path="/" element={<Discovery />} />
          <Route path="/prompts" element={<PromptDirectory />} />
          <Route path="/prompts/:id" element={<PromptDetails />} />
+         <Route path="/prompts/category/:categoryId" element={<CategoryPrompts />} />
          <Route path="/ai-tools" element={<PublicTools />} />
          <Route path="/ai-tools/:id" element={<ToolDetails />} />
          <Route path="/ai-videos-tuto" element={<AIVideos />} />
