@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React;
 import { NavLink } from 'react-router-dom';
 
 const Sidebar = () => {
@@ -61,7 +61,7 @@ const Sidebar = () => {
           />
           <div className="flex-1 overflow-hidden">
             <p className="text-sm font-bold text-slate-900 dark:text-white truncate">Alex Admin</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">alex@trendhub.ai</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">alex@udx3.ai</p>
           </div>
           <NavLink to="/admin-login" className="material-symbols-outlined text-slate-400 hover:text-red-500 transition-colors" title="Logout">logout</NavLink>
         </div>

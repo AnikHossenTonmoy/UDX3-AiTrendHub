@@ -20,7 +20,7 @@ const Maintenance = () => {
                  
                  <h1 className="text-3xl font-display font-bold text-slate-900 dark:text-white mb-3">We are under maintenance</h1>
                  <p className="text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
-                     We are currently making improvements to the AI TrendHub platform. We will be back shortly with new features and a better experience.
+                     We are currently making improvements to the UDX3 platform. We will be back shortly with new features and a better experience.
                  </p>
 
                  <div className="flex flex-col gap-4">

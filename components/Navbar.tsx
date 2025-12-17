@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React;
 import { NavLink, useNavigate } from 'react-router-dom';
 import ThemeToggle from './ThemeToggle';
 
@@ -15,7 +15,7 @@ const Navbar = () => {
              <div className="size-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
               <span className="material-symbols-outlined text-[20px]">auto_awesome</span>
             </div>
-            <span className="text-xl font-display font-bold text-slate-900 dark:text-white tracking-tight">AI TrendHub</span>
+            <span className="text-xl font-display font-bold text-slate-900 dark:text-white tracking-tight">UDX3</span>
           </div>
 
           {/* Desktop Nav - Hidden on Mobile */}
