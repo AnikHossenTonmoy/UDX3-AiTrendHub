@@ -1,832 +1,315 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useData } from '../context/DataContext';
-import { GeminiBackend } from '../services/GeminiBackend';
-
-// --- Animated Number Component for "How It Works" ---
-const AnimatedNumber = ({ number, isHovered }: { number: string; isHovered: boolean }) => {
-  const [display, setDisplay] = useState(number);
-  
-  useEffect(() => {
-    if (isHovered) {
-      let count = 0;
-      const interval = setInterval(() => {
-        setDisplay(Math.floor(Math.random() * 99).toString().padStart(2, '0'));
-        count++;
-        if (count > 8) { // Run for a few frames
-          clearInterval(interval);
-          setDisplay(number);
-        }
-      }, 40); // Fast speed
-      return () => clearInterval(interval);
-    } else {
-      setDisplay(number);
-    }
-  }, [isHovered, number]);
-
-  return <span>{display}</span>;
-};
+import { Prompt } from '../types';
 
 const PromptDirectory = () => {
   const navigate = useNavigate();
   const { prompts } = useData();
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // --- Generator State ---
-  const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
-  const [genInputs, setGenInputs] = useState({
-      category: '',
-      tone: '',
-      audience: '',
-      purpose: '',
-      details: ''
-  });
-  const [generatedPrompt, setGeneratedPrompt] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  // --- Scroll Animation State ---
-  const generatorRef = useRef<HTMLDivElement>(null);
-  const [isGeneratorVisible, setIsGeneratorVisible] = useState(false);
-
-  // --- Featured Section Animation State ---
-  const featuredRef = useRef<HTMLDivElement>(null);
-  const [isFeaturedVisible, setIsFeaturedVisible] = useState(false);
-
-  // --- Creation Section Animation State ---
-  const creationRef = useRef<HTMLDivElement>(null);
-  const [isCreationVisible, setIsCreationVisible] = useState(false);
+  const [activeSort, setActiveSort] = useState<'Trending' | 'New' | 'Top'>('Trending');
+  const [savedPromptIds, setSavedPromptIds] = useState<Set<string>>(new Set());
+  const [isSticky, setIsSticky] = useState(false);
 
   useEffect(() => {
-    // Observer for Generator Section
-    const generatorObserver = new IntersectionObserver(
-      ([entry]) => {
-        setIsGeneratorVisible(entry.isIntersecting);
-      },
-      { threshold: 0.2 }
-    );
-
-    // Observer for Featured Cards Section
-    const featuredObserver = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) setIsFeaturedVisible(true);
-      },
-      { threshold: 0.15 }
-    );
-
-    // Observer for Creation Section
-    const creationObserver = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) setIsCreationVisible(true);
-      },
-      { threshold: 0.15 }
-    );
-
-    if (generatorRef.current) generatorObserver.observe(generatorRef.current);
-    if (featuredRef.current) featuredObserver.observe(featuredRef.current);
-    if (creationRef.current) creationObserver.observe(creationRef.current);
-
-    return () => {
-      if (generatorRef.current) generatorObserver.unobserve(generatorRef.current);
-      if (featuredRef.current) featuredObserver.unobserve(featuredRef.current);
-      if (creationRef.current) creationObserver.unobserve(creationRef.current);
-    };
+    const saved = localStorage.getItem('trendhub_saved_prompts');
+    if (saved) {
+      try {
+        setSavedPromptIds(new Set(JSON.parse(saved)));
+      } catch (e) {
+        console.error("Failed to load saved prompts", e);
+      }
+    }
   }, []);
 
-  // Featured Categories Data
-  const FEATURED_CATEGORIES = [
-    {
-      title: "Digital Marketing & SEO",
-      icon: "trending_up",
-      count: "2,800+",
-      description: "Comprehensive marketing strategies, SEO optimization, and digital growth tactics.",
-      color: "bg-blue-500", 
-      popular: true,
-      route: "marketing-seo"
-    },
-    {
-      title: "Social-Media Strategy",
-      icon: "chat_bubble",
-      count: "2,800+",
-      description: "Content creation, engagement strategies, and platform-specific optimization.",
-      color: "bg-pink-500",
-      popular: true,
-      route: "social-media"
-    },
-    {
-      title: "Branding & Copywriting",
-      icon: "sell",
-      count: "2,800+",
-      description: "Brand development, copywriting, and creative content strategies.",
-      color: "bg-green-500",
-      popular: true,
-      route: "branding"
-    },
-    {
-      title: "Programming & Code",
-      icon: "code",
-      count: "5,700+",
-      description: "Code development, debugging assistance, and software architecture guidance.",
-      color: "bg-indigo-500",
-      popular: true,
-      route: "coding"
-    },
-    {
-      title: "Business & Startup",
-      icon: "business_center",
-      count: "3,750+",
-      description: "Business strategy, startup guidance, and entrepreneurial development.",
-      color: "bg-orange-500",
-      popular: true,
-      route: "business"
-    },
-    {
-      title: "Creative Arts",
-      icon: "palette",
-      count: "2,800+",
-      description: "Artistic inspiration, creative writing, and innovative design concepts.",
-      color: "bg-fuchsia-500",
-      popular: true,
-      route: "art"
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsSticky(window.scrollY > 300);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const categories = ['All', 'Marketing', 'Social Media', 'Coding', 'Business', 'Writing', 'Art', 'Audio Generation', 'Video Generation'];
+
+  const toggleSave = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const next = new Set(savedPromptIds);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
     }
-  ];
-
-  // Creation Categories Data
-  const CREATION_CATEGORIES = [
-    {
-      title: "Image Generator Prompts",
-      icon: "image",
-      count: "6,600+",
-      description: "Visual content creation for DALL-E, Midjourney, Stable Diffusion, and other AI image generators.",
-      color: "bg-purple-500",
-      popular: true,
-      route: "image-generation"
-    },
-    {
-      title: "Video Generator Prompts",
-      icon: "videocam",
-      count: "7,700+",
-      description: "Video content creation for Sora, RunwayML, Pika, and other AI video generators.",
-      color: "bg-blue-500",
-      popular: true,
-      route: "video-generation"
-    },
-    {
-      title: "Music Generator Prompts",
-      icon: "music_note",
-      count: "4,000+",
-      description: "Audio content creation for Suno, Udio, and other AI music generation platforms.",
-      color: "bg-teal-500",
-      popular: true,
-      route: "music-generation"
-    }
-  ];
-
-  // System Advantages Data
-  const ADVANTAGES = [
-    {
-      title: "Advanced AI Database",
-      desc: "Comprehensive AI-powered prompt database with machine learning optimization for maximum output quality.",
-      icon: "psychology",
-      badge: "ADVANCED"
-    },
-    {
-      title: "Lightning Fast Access",
-      desc: "Instant prompt delivery with zero-latency access to our distributed database infrastructure.",
-      icon: "bolt",
-      badge: "INSTANT"
-    },
-    {
-      title: "Expert-Crafted Content",
-      desc: "Each prompt engineered by AI specialists using advanced prompt engineering methodologies.",
-      icon: "star",
-      badge: "EXPERT"
-    },
-    {
-      title: "Continuous Updates",
-      desc: "Self-improving system that adapts to emerging AI capabilities and user feedback patterns.",
-      icon: "update",
-      badge: "ADAPTIVE"
-    }
-  ];
-
-  // How It Works Data
-  const HOW_IT_WORKS = [
-    { number: "01", title: "Browse Categories", desc: "Navigate our organized database to locate optimal prompt sequences for your needs.", icon: "manage_search" },
-    { number: "02", title: "Search & Filter", desc: "Utilize advanced search algorithms to identify perfect prompt configurations.", icon: "filter_list" },
-    { number: "03", title: "Copy & Customize", desc: "Copy and customize prompt data for your specific AI implementation requirements.", icon: "content_copy" },
-    { number: "04", title: "Execute & Optimize", desc: "Deploy prompts to your AI systems and achieve superior performance metrics.", icon: "rocket_launch" }
-  ];
-
-  const handleCopyGenerated = () => {
-      navigator.clipboard.writeText(generatedPrompt);
-      alert('Generated prompt copied!');
+    setSavedPromptIds(next);
+    localStorage.setItem('trendhub_saved_prompts', JSON.stringify(Array.from(next)));
   };
 
-  const handleGeneratePrompt = async () => {
-      if (!genInputs.purpose) return;
-      setIsGenerating(true);
-      setGeneratedPrompt('');
-      
-      const promptConstruction = `Act as an expert prompt engineer. Create a high-quality, detailed AI prompt based on the following specifications:
-      - Category: ${genInputs.category || 'General'}
-      - Tone: ${genInputs.tone || 'Professional'}
-      - Target Audience: ${genInputs.audience || 'General'}
-      - Core Purpose: ${genInputs.purpose}
-      - Additional Context: ${genInputs.details || 'None'}
-      
-      Return ONLY the prompt text, no intro/outro.`;
+  const filteredAndSortedPrompts = useMemo(() => {
+    const filtered = prompts.filter(p => {
+      const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
+      const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
+      return matchesCategory && matchesSearch;
+    });
 
-      try {
-          const result = await GeminiBackend.generateRawText(promptConstruction);
-          setGeneratedPrompt(result);
-      } catch (e) {
-          console.error(e);
-          setGeneratedPrompt("Error generating prompt. Please try again.");
-      } finally {
-          setIsGenerating(false);
-      }
+    return [...filtered].sort((a, b) => {
+      if (activeSort === 'Trending') return b.views - a.views;
+      if (activeSort === 'Top') return b.likes - a.likes;
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
+  }, [prompts, selectedCategory, searchQuery, activeSort]);
+
+  const handlePromptClick = (promptId: string) => {
+    navigate(`/prompts/${promptId}`);
   };
 
-  // Logic: Spotlight Effect on Mouse Move
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const cards = document.getElementsByClassName('spotlight-card');
-    for (const card of cards) {
-        const rect = card.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        (card as HTMLElement).style.setProperty('--mouse-x', `${x}px`);
-        (card as HTMLElement).style.setProperty('--mouse-y', `${y}px`);
-    }
-  };
-
-  // Hover state for How it Works cards to trigger countdown
-  const [hoveredStep, setHoveredStep] = useState<number | null>(null);
-
-  // Handle Category Card Click
-  const handleCategoryClick = (category: any) => {
-      if (category.route) {
-          navigate(`/prompts/category/${category.route}`);
-      }
+  const handleCopyPrompt = (content: string) => {
+    navigator.clipboard.writeText(content);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] transition-colors font-sans selection:bg-blue-500/30">
-      
-      {/* CSS for Featured Cards (New Design + Animations) */}
+    <div className="min-h-screen bg-white dark:bg-slate-950 transition-colors duration-300">
       <style>{`
-        .uiverse-card {
-          width: 100%;
-          height: 100%;
-          min-height: 250px;
-          background: transparent;
-          position: relative;
-          display: flex;
-          place-content: center;
-          place-items: center;
-          overflow: hidden;
-          border-radius: 20px;
-          opacity: 0; /* Hidden initially, controlled by animation */
-          transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
+        .prompt-filter-sticky {
+          animation: slideDown 0.3s ease-out;
         }
-
-        .uiverse-card::before {
-          content: '';
-          position: absolute;
-          width: 200%; 
-          height: 200%;
-          background-image: linear-gradient(180deg, rgb(0, 183, 255), rgb(255, 48, 255));
-          animation: uiverse-rotBGimg 3s linear infinite;
-          transition: all 0.2s linear;
-          z-index: 0;
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
-
-        @keyframes uiverse-rotBGimg {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+        .prompt-card {
+          animation: fadeInUp 0.5s ease-out forwards;
+          opacity: 0;
         }
-
-        .uiverse-card::after {
-          content: '';
-          position: absolute;
-          background: rgba(7, 24, 46, 0.85);
-          backdrop-filter: blur(10px);
-          inset: 2px;
-          border-radius: 18px;
-          z-index: 1;
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
-        
-        .uiverse-content {
-          position: relative;
-          z-index: 2;
-          width: 100%;
-          height: 100%;
-          padding: 24px;
-          display: flex;
-          flex-direction: column;
-        }
-
-        /* Hover Animation: Popup & Glow */
-        .uiverse-card:hover {
-            transform: scale(1.05) !important; 
-            box-shadow: 0 0 30px rgba(0, 183, 255, 0.6);
-            z-index: 10;
-        }
-
-        /* Scroll Entrance Animation */
-        .animate-popIn {
-           animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
-
-        /* Scroll Exit Animation */
-        .animate-fadeOut {
-           animation: fadeOut 0.5s ease forwards;
-        }
-
-        @keyframes popIn {
-          0% { opacity: 0; transform: scale(0.5) translateY(100px); }
-          100% { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        @keyframes fadeOut {
-          0% { opacity: 1; transform: scale(1) translateY(0); }
-          100% { opacity: 0; transform: scale(0.9) translateY(50px); }
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
         }
       `}</style>
 
-      {/* HERO SECTION - GALAXY STYLE */}
-      <section className="relative pt-32 pb-20 px-6 overflow-hidden" onMouseMove={handleMouseMove}>
-        {/* Galaxy Background Effects */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none z-0">
-            <div className="absolute top-[-10%] left-[20%] w-[600px] h-[600px] bg-purple-600/20 blur-[100px] rounded-full mix-blend-multiply dark:mix-blend-screen opacity-50 dark:opacity-100"></div>
-            <div className="absolute top-[10%] right-[20%] w-[500px] h-[500px] bg-blue-600/20 blur-[100px] rounded-full mix-blend-multiply dark:mix-blend-screen opacity-50 dark:opacity-100"></div>
-        </div>
-
-        <div className="relative z-10 max-w-5xl mx-auto text-center mb-16">
-            {/* Pill Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 backdrop-blur-md mb-8 shadow-sm">
-                <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
-                <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">The Largest AI Prompt Library</span>
-            </div>
-
-            {/* Huge Headline */}
-            <h1 className="text-5xl md:text-7xl font-display font-bold text-slate-900 dark:text-white tracking-tight mb-6 leading-tight drop-shadow-sm">
-                Find the perfect <br className="hidden md:block" />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400">
-                    AI Prompt
-                </span>
+      {/* HERO SECTION */}
+      <section className="bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950 border-b border-slate-200 dark:border-slate-800 py-12 md:py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-10 text-center">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 dark:text-white mb-4 leading-tight">
+              Discover the Perfect <span className="bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">AI Prompt</span>
             </h1>
-            
-            <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
-                Unlock the full potential of ChatGPT, Midjourney, and Claude with our curated collection of copy-paste prompts.
+            <p className="text-lg text-slate-600 dark:text-slate-400 mb-8 max-w-2xl mx-auto">
+              Explore thousands of proven prompts for every AI tool. Copy, customize, and create amazing results instantly.
             </p>
 
-            {/* Main Search Bar - Floating */}
-            <div className="max-w-3xl mx-auto relative group z-20">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur opacity-20 group-hover:opacity-30 transition-opacity duration-500"></div>
-                <div className="relative flex items-center bg-white dark:bg-[#151b2b] rounded-full shadow-2xl border border-slate-200 dark:border-slate-700/60 p-2 transition-all group-hover:border-blue-500/50 group-focus-within:ring-4 ring-blue-500/10">
-                    <div className="pl-6 text-slate-400">
-                        <span className="material-symbols-outlined text-2xl">search</span>
-                    </div>
-                    <input 
-                        type="text" 
-                        placeholder="Search for 'SEO Blog Post', 'Cyberpunk Art', 'Python Script'..." 
-                        className="flex-1 bg-transparent border-none text-slate-900 dark:text-white placeholder-slate-400 focus:ring-0 text-lg h-14"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-8 py-3 font-bold transition-all hover:scale-105 active:scale-95 hidden sm:block shadow-lg shadow-blue-600/20">
-                        Search
-                    </button>
-                </div>
+            <div className="inline-block bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-xs font-semibold mb-8 backdrop-blur-sm border border-blue-200 dark:border-blue-800">
+              ✨ Updated Daily • 10,000+ Active Prompts
             </div>
-        </div>
+          </div>
 
-        {/* 4 HERO CARDS - Animated with Rotate & Glow */}
-        <div className="relative z-10 max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 mb-8">
-            {/* Card 1 */}
-            <div className="spotlight-card group relative bg-white/10 dark:bg-[#0f111a] border border-slate-200/50 dark:border-white/5 rounded-2xl p-5 flex flex-col items-center text-center overflow-hidden transition-all duration-300 hover:scale-[1.05] hover:-translate-y-2 hover:shadow-[0_0_30px_rgba(16,185,129,0.3)] hover:border-emerald-500/50 hover:bg-white/20 dark:hover:bg-[#131620] cursor-pointer">
-                <div className="pointer-events-none absolute -inset-px opacity-0 group-hover:opacity-100 transition duration-300"
-                    style={{ background: `radial-gradient(400px circle at var(--mouse-x) var(--mouse-y), rgba(16, 185, 129, 0.1), transparent 40%)` }}
-                />
-                <div className="mb-3 p-3 rounded-xl bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">
-                    <span className="material-symbols-outlined text-3xl">database</span>
-                </div>
-                <h3 className="text-3xl font-display font-bold text-slate-900 dark:text-white mb-0.5">500k+</h3>
-                <p className="text-slate-500 dark:text-slate-400 font-medium mb-3 text-sm">AI Prompts</p>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full">Quality Prompts</span>
+          <div className="space-y-6">
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <span className="material-symbols-outlined text-slate-400 group-focus-within:text-blue-600 transition-colors duration-300">search</span>
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by title, description, or tags..."
+                className="w-full pl-12 pr-6 py-4 text-lg bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/20 transition-all duration-300 shadow-sm dark:shadow-lg"
+              />
             </div>
 
-            {/* Card 2 */}
-            <div className="spotlight-card group relative bg-white/10 dark:bg-[#0f111a] border border-slate-200/50 dark:border-white/5 rounded-2xl p-5 flex flex-col items-center text-center overflow-hidden transition-all duration-300 hover:scale-[1.05] hover:-translate-y-2 hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:border-blue-500/50 hover:bg-white/20 dark:hover:bg-[#131620] cursor-pointer">
-                <div className="pointer-events-none absolute -inset-px opacity-0 group-hover:opacity-100 transition duration-300"
-                    style={{ background: `radial-gradient(400px circle at var(--mouse-x) var(--mouse-y), rgba(59, 130, 246, 0.1), transparent 40%)` }}
-                />
-                <div className="mb-3 p-3 rounded-xl bg-blue-500/10 text-blue-500 dark:text-blue-400 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">
-                    <span className="material-symbols-outlined text-3xl">group</span>
-                </div>
-                <h3 className="text-3xl font-display font-bold text-slate-900 dark:text-white mb-0.5">Growing</h3>
-                <p className="text-slate-500 dark:text-slate-400 font-medium mb-3 text-sm">Community</p>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2 py-0.5 rounded-full">Active Users</span>
-            </div>
-
-            {/* Card 3 */}
-            <div className="spotlight-card group relative bg-white/10 dark:bg-[#0f111a] border border-slate-200/50 dark:border-white/5 rounded-2xl p-5 flex flex-col items-center text-center overflow-hidden transition-all duration-300 hover:scale-[1.05] hover:-translate-y-2 hover:shadow-[0_0_30px_rgba(16,185,129,0.3)] hover:border-emerald-500/50 hover:bg-white/20 dark:hover:bg-[#131620] cursor-pointer">
-                <div className="pointer-events-none absolute -inset-px opacity-0 group-hover:opacity-100 transition duration-300"
-                    style={{ background: `radial-gradient(400px circle at var(--mouse-x) var(--mouse-y), rgba(16, 185, 129, 0.1), transparent 40%)` }}
-                />
-                <div className="mb-3 p-3 rounded-xl bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">
-                    <span className="material-symbols-outlined text-3xl">memory</span>
-                </div>
-                <h3 className="text-3xl font-display font-bold text-slate-900 dark:text-white mb-0.5">High</h3>
-                <p className="text-slate-500 dark:text-slate-400 font-medium mb-3 text-sm">Quality Focus</p>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full">Curated Content</span>
-            </div>
-
-            {/* Card 4 */}
-            <div className="spotlight-card group relative bg-white/10 dark:bg-[#0f111a] border border-slate-200/50 dark:border-white/5 rounded-2xl p-5 flex flex-col items-center text-center overflow-hidden transition-all duration-300 hover:scale-[1.05] hover:-translate-y-2 hover:shadow-[0_0_30px_rgba(249,115,22,0.3)] hover:border-orange-500/50 hover:bg-white/20 dark:hover:bg-[#131620] cursor-pointer">
-                <div className="pointer-events-none absolute -inset-px opacity-0 group-hover:opacity-100 transition duration-300"
-                    style={{ background: `radial-gradient(400px circle at var(--mouse-x) var(--mouse-y), rgba(249, 115, 22, 0.1), transparent 40%)` }}
-                />
-                <div className="mb-3 p-3 rounded-xl bg-orange-500/10 text-orange-500 dark:text-orange-400 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">
-                    <span className="material-symbols-outlined text-3xl">rocket_launch</span>
-                </div>
-                <h3 className="text-3xl font-display font-bold text-slate-900 dark:text-white mb-0.5">50+</h3>
-                <p className="text-slate-500 dark:text-slate-400 font-medium mb-3 text-sm">Categories</p>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 px-2 py-0.5 rounded-full">Specialized Areas</span>
-            </div>
-        </div>
-
-        {/* --- AI PROMPT GENERATOR SECTION --- */}
-        <div 
-            ref={generatorRef}
-            className={`relative z-20 max-w-7xl mx-auto px-4 mb-16 transform transition-all duration-1000 cubic-bezier(0.17, 0.55, 0.55, 1) ${
-                isGeneratorVisible 
-                ? 'opacity-100 translate-y-0 scale-100' 
-                : 'opacity-0 translate-y-20 scale-95'
-            }`}
-        >
-            {!isGeneratorOpen ? (
-                // Collapsed State (Trigger)
-                <div 
-                    onClick={() => setIsGeneratorOpen(true)}
-                    className="group cursor-pointer rounded-2xl bg-slate-900/50 dark:bg-[#0f111a] border border-slate-200/50 dark:border-white/10 p-6 flex items-center justify-between backdrop-blur-md transition-all hover:border-green-500/50 hover:shadow-[0_0_30px_rgba(34,197,94,0.1)]"
+            <div className="flex flex-wrap gap-3 justify-center md:justify-start">
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 transform ${
+                    selectedCategory === category
+                      ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-lg scale-105'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 hover:shadow-md'
+                  }`}
                 >
-                    <div className="flex items-center gap-4">
-                        <div className="size-12 rounded-xl bg-green-500/20 text-green-500 flex items-center justify-center relative">
-                            <span className="material-symbols-outlined text-2xl">neurology</span>
-                            <span className="absolute top-0 right-0 size-3 bg-green-500 rounded-full border-2 border-[#0f111a]"></span>
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-display font-bold text-slate-900 dark:text-white mb-1 uppercase tracking-wide">AI Prompt Generator</h3>
-                            <p className="text-sm text-green-500 font-bold group-hover:text-green-400 transition-colors">Click to activate AI prompt creation</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <div className="text-right hidden sm:block">
-                            <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Status</span>
-                            <p className="text-slate-300 font-bold">READY</p>
-                        </div>
-                        <div className="size-10 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 group-hover:bg-white/10 group-hover:text-white transition-all">
-                            <span className="material-symbols-outlined">expand_more</span>
-                        </div>
-                    </div>
-                </div>
-            ) : (
-                // Expanded State (Form)
-                <div className="rounded-3xl bg-white dark:bg-[#151b2b] border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden animate-fadeIn">
-                    <div className="p-6 md:p-8 bg-gradient-to-r from-slate-50 to-white dark:from-[#151b2b] dark:to-[#1a2236]">
-                        <div className="flex justify-between items-center mb-8">
-                            <div className="flex items-center gap-3">
-                                <span className="material-symbols-outlined text-3xl text-green-500">neurology</span>
-                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">AI Prompt Generator</h3>
-                            </div>
-                            <button 
-                                onClick={() => setIsGeneratorOpen(false)}
-                                className="text-slate-400 hover:text-red-500 flex items-center gap-1 text-sm font-bold bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg transition-colors"
-                            >
-                                <span className="material-symbols-outlined text-lg">close</span> Hide
-                            </button>
-                        </div>
+                  {category}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Category</label>
-                                <select 
-                                    className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
-                                    value={genInputs.category}
-                                    onChange={(e) => setGenInputs({...genInputs, category: e.target.value})}
-                                >
-                                    <option value="">Select Category</option>
-                                    <option>Marketing</option>
-                                    <option>Coding</option>
-                                    <option>Creative Writing</option>
-                                    <option>Business</option>
-                                    <option>Art / Image Gen</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tone</label>
-                                <select 
-                                    className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
-                                    value={genInputs.tone}
-                                    onChange={(e) => setGenInputs({...genInputs, tone: e.target.value})}
-                                >
-                                    <option value="">Select Tone</option>
-                                    <option>Professional</option>
-                                    <option>Friendly</option>
-                                    <option>Witty</option>
-                                    <option>Urgent</option>
-                                    <option>Academic</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Target Audience</label>
-                                <select 
-                                    className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
-                                    value={genInputs.audience}
-                                    onChange={(e) => setGenInputs({...genInputs, audience: e.target.value})}
-                                >
-                                    <option value="">Select Audience</option>
-                                    <option>Beginners</option>
-                                    <option>Experts</option>
-                                    <option>Students</option>
-                                    <option>Executives</option>
-                                    <option>Developers</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="mb-6">
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Purpose</label>
-                            <input 
-                                type="text" 
-                                placeholder="e.g., Generate marketing copy for a coffee brand, Create a Python script for scraping..."
-                                className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-400"
-                                value={genInputs.purpose}
-                                onChange={(e) => setGenInputs({...genInputs, purpose: e.target.value})}
-                            />
-                        </div>
-
-                        <div className="mb-8">
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Additional Details (Optional)</label>
-                            <textarea 
-                                placeholder="Any specific requirements, constraints, or context..."
-                                className="w-full h-24 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-400 resize-none"
-                                value={genInputs.details}
-                                onChange={(e) => setGenInputs({...genInputs, details: e.target.value})}
-                            ></textarea>
-                        </div>
-
-                        <button 
-                            onClick={handleGeneratePrompt}
-                            disabled={!genInputs.purpose || isGenerating}
-                            className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-lg shadow-lg shadow-blue-500/25 flex items-center justify-center gap-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isGenerating ? (
-                                <>
-                                    <span className="size-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                                    Generating Expert Prompt...
-                                </>
-                            ) : (
-                                <>
-                                    <span className="material-symbols-outlined">auto_awesome</span>
-                                    Generate Prompt
-                                </>
-                            )}
-                        </button>
-
-                        {/* Result Area */}
-                        {generatedPrompt && (
-                            <div className="mt-8 pt-8 border-t border-slate-200 dark:border-slate-700 animate-fadeIn">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h4 className="font-bold text-slate-900 dark:text-white">Generated Prompt</h4>
-                                    <button 
-                                        onClick={handleCopyGenerated}
-                                        className="text-xs font-bold text-blue-600 hover:text-blue-500 flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg transition-colors"
-                                    >
-                                        <span className="material-symbols-outlined text-sm">content_copy</span> Copy
-                                    </button>
-                                </div>
-                                <div className="bg-slate-900 rounded-xl p-5 border border-slate-700 relative group">
-                                    <pre className="text-slate-300 font-mono text-sm whitespace-pre-wrap leading-relaxed">
-                                        {generatedPrompt}
-                                    </pre>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* FILTER & SORT BAR */}
+        <div className={`transition-all duration-300 ${isSticky ? 'prompt-filter-sticky sticky top-16 md:top-20 z-30 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 py-4 mb-8 shadow-sm' : 'mb-8 mt-6'}`}>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex gap-1 border-b border-slate-200 dark:border-slate-700">
+              {['Trending', 'New', 'Top'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveSort(tab as 'Trending' | 'New' | 'Top')}
+                  className={`relative pb-3 px-1 text-sm font-semibold transition-all duration-300 ${
+                    activeSort === tab
+                      ? 'text-slate-900 dark:text-white'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                  }`}
+                >
+                  {tab}
+                  {activeSort === tab && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full" />
+                  )}
+                </button>
+              ))}
+            </div>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              {filteredAndSortedPrompts.length === 0 ? 'No' : filteredAndSortedPrompts.length} result{filteredAndSortedPrompts.length !== 1 ? 's' : ''} found
+            </p>
+          </div>
         </div>
 
-        {/* --- FEATURED CATEGORIES SECTION --- */}
-        <section className="py-24 px-6 relative overflow-hidden">
-            {/* Ambient Background Glow */}
-            <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-green-500/10 rounded-full blur-[128px] pointer-events-none"></div>
-            <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[128px] pointer-events-none"></div>
+        {/* PROMPT GRID */}
+        {filteredAndSortedPrompts.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-12">
+            {filteredAndSortedPrompts.map((prompt, index) => {
+              const isSaved = savedPromptIds.has(prompt.id);
+              const [isCopied, setIsCopied] = useState(false);
 
-            <div className="relative z-10 max-w-7xl mx-auto">
-                {/* Section Header */}
-                <div className="text-center mb-16">
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-green-500/30 bg-green-500/10 mb-6">
-                        <span className="material-symbols-outlined text-green-500 text-[18px]">dataset</span>
-                        <span className="text-xs font-bold text-green-500 uppercase tracking-widest">Featured Categories</span>
+              const handleCopy = (e: React.MouseEvent) => {
+                e.stopPropagation();
+                navigator.clipboard.writeText(prompt.content);
+                setIsCopied(true);
+                setTimeout(() => setIsCopied(false), 2000);
+              };
+
+              return (
+                <div
+                  key={prompt.id}
+                  className="prompt-card group cursor-pointer"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                  onClick={() => handlePromptClick(prompt.id)}
+                >
+                  <div className="h-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-300 hover:shadow-lg dark:hover:shadow-blue-900/20 overflow-hidden relative">
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                    <div className="flex justify-between items-start mb-4">
+                      <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50">
+                        {prompt.category}
+                      </span>
+                      <button
+                        onClick={(e) => toggleSave(e, prompt.id)}
+                        className={`transition-all duration-300 transform hover:scale-110 ${
+                          isSaved ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                        }`}
+                        title={isSaved ? 'Saved' : 'Save'}
+                      >
+                        <span className={`material-symbols-outlined text-[20px] ${isSaved ? 'fill-1' : ''}`}>
+                          bookmark
+                        </span>
+                      </button>
                     </div>
-                    <h2 className="text-4xl md:text-5xl font-display font-bold text-slate-900 dark:text-white mb-4">
-                        FEATURED <span className="text-green-500">CATEGORIES</span>
-                    </h2>
-                    <p className="text-slate-500 dark:text-slate-400 text-lg max-w-2xl mx-auto">
-                        Explore our most popular categories with thousands of optimized prompt sequences.
+
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-3 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
+                      {prompt.title}
+                    </h3>
+
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 line-clamp-3 leading-relaxed">
+                      {prompt.description}
                     </p>
-                </div>
 
-                {/* Cards Grid with Scroll Animation */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" ref={featuredRef}>
-                    {FEATURED_CATEGORIES.map((category, index) => (
-                        <div 
-                            key={index} 
-                            className={`uiverse-card ${isFeaturedVisible ? 'animate-popIn' : 'animate-fadeOut'}`}
-                            style={{ 
-                                animationDelay: isFeaturedVisible ? `${index * 150}ms` : `${index * 50}ms`,
-                                animationFillMode: 'forwards'
-                            }}
+                    <div className="flex gap-1.5 overflow-x-auto hide-scrollbar mb-4">
+                      {prompt.tags.slice(0, 3).map((tag) => (
+                        <span
+                          key={tag}
+                          className="text-xs text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded-full whitespace-nowrap border border-slate-200 dark:border-slate-600/50"
                         >
-                            {/* Card Content Wrapper */}
-                            <div className="uiverse-content">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className={`size-12 rounded-2xl ${category.color} flex items-center justify-center shadow-lg shadow-${category.color.replace('bg-', '')}/30`}>
-                                        <span className="material-symbols-outlined text-white text-[24px]">{category.icon}</span>
-                                    </div>
-                                    {category.popular && (
-                                        <span className="bg-amber-500 text-black text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">Popular</span>
-                                    )}
-                                </div>
-                                
-                                <h3 className="text-xl font-bold text-white mb-2">{category.title}</h3>
-                                
-                                <div className="mb-2">
-                                    <span className="inline-block bg-slate-800/80 border border-slate-700 text-blue-400 text-xs font-bold px-3 py-1 rounded-full">
-                                        {category.count}
-                                    </span>
-                                </div>
-
-                                <p className="text-slate-300 text-xs leading-relaxed mb-4 flex-1 line-clamp-2">
-                                    {category.description}
-                                </p>
-
-                                <button 
-                                    onClick={() => handleCategoryClick(category)}
-                                    className="flex items-center gap-2 text-green-400 font-bold text-sm hover:text-green-300 transition-colors mt-auto group"
-                                >
-                                    Access AI Prompts
-                                    <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </section>
-
-        {/* --- AI CREATION PROMPTS SECTION --- */}
-        <section className="py-24 px-6 relative overflow-hidden bg-slate-900/20">
-            {/* Ambient Background Glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[300px] bg-purple-500/5 rounded-full blur-[100px] pointer-events-none"></div>
-
-            <div className="relative z-10 max-w-7xl mx-auto">
-                {/* Section Header */}
-                <div className="text-center mb-16">
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 mb-6">
-                        <span className="material-symbols-outlined text-purple-400 text-[18px]">auto_awesome</span>
-                        <span className="text-xs font-bold text-purple-400 uppercase tracking-widest">AI Creation Tools</span>
+                          #{tag}
+                        </span>
+                      ))}
+                      {prompt.tags.length > 3 && (
+                        <span className="text-xs text-slate-500 dark:text-slate-500 px-2 py-1 flex items-center">
+                          +{prompt.tags.length - 3}
+                        </span>
+                      )}
                     </div>
-                    <h2 className="text-4xl md:text-5xl font-display font-bold text-slate-900 dark:text-white mb-4">
-                        AI <span className="text-pink-500">CREATION PROMPTS</span>
-                    </h2>
-                    <p className="text-slate-500 dark:text-slate-400 text-lg max-w-2xl mx-auto">
-                        Unleash your creativity with specialized prompts for AI-powered content generation across images, videos, and music.
-                    </p>
+
+                    <div className="border-t border-slate-200 dark:border-slate-700 pt-4 flex items-center justify-between">
+                      <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-slate-400 font-medium">
+                        <span className="flex items-center gap-1.5" title="Views">
+                          <span className="material-symbols-outlined text-[16px]">visibility</span>
+                          {prompt.views >= 1000 ? `${(prompt.views / 1000).toFixed(1)}k` : prompt.views}
+                        </span>
+                        <span className="flex items-center gap-1.5" title="Likes">
+                          <span className="material-symbols-outlined text-[16px]">favorite</span>
+                          {prompt.likes >= 1000 ? `${(prompt.likes / 1000).toFixed(1)}k` : prompt.likes}
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={handleCopy}
+                        className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-300 transform ${
+                          isCopied
+                            ? 'bg-green-600 text-white shadow-md'
+                            : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md'
+                        }`}
+                      >
+                        {isCopied ? '✓ Copied' : 'Copy'}
+                      </button>
+                    </div>
+                  </div>
                 </div>
-
-                {/* Creation Cards Grid with Scroll Animation */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8" ref={creationRef}>
-                    {CREATION_CATEGORIES.map((category, index) => (
-                        <div 
-                            key={index} 
-                            className={`uiverse-card ${isCreationVisible ? 'animate-popIn' : 'animate-fadeOut'}`}
-                            style={{ 
-                                animationDelay: isCreationVisible ? `${index * 150}ms` : `${index * 50}ms`,
-                                animationFillMode: 'forwards'
-                            }}
-                        >
-                            {/* Card Content Wrapper */}
-                            <div className="uiverse-content">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className={`size-12 rounded-2xl ${category.color} flex items-center justify-center shadow-lg shadow-${category.color.replace('bg-', '')}/30`}>
-                                        <span className="material-symbols-outlined text-white text-[24px]">{category.icon}</span>
-                                    </div>
-                                    {category.popular && (
-                                        <span className="bg-amber-500 text-black text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">Popular</span>
-                                    )}
-                                </div>
-                                
-                                <h3 className="text-xl font-bold text-white mb-2">{category.title}</h3>
-                                
-                                <div className="mb-2">
-                                    <span className="inline-block bg-slate-800/80 border border-slate-700 text-blue-400 text-xs font-bold px-3 py-1 rounded-full">
-                                        {category.count}
-                                    </span>
-                                </div>
-
-                                <p className="text-slate-300 text-xs leading-relaxed mb-4 flex-1 line-clamp-3">
-                                    {category.description}
-                                </p>
-
-                                <button 
-                                    onClick={() => handleCategoryClick(category)}
-                                    className="flex items-center gap-2 text-blue-400 font-bold text-sm hover:text-blue-300 transition-colors mt-auto group"
-                                >
-                                    Access AI Prompts
-                                    <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="py-20 md:py-32 px-4 text-center">
+            <div className="inline-flex justify-center items-center w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 mb-6">
+              <span className="material-symbols-outlined text-5xl text-slate-400">search_off</span>
             </div>
-        </section>
-
-        {/* --- SYSTEM ADVANTAGES SECTION --- */}
-        <section className="py-24 px-6 relative bg-[#07182E] overflow-hidden">
-            <div className="relative z-10 max-w-7xl mx-auto">
-                <h2 className="text-4xl md:text-6xl font-display font-bold text-white text-center mb-20 tracking-tight">
-                    SYSTEM <span className="text-teal-400">ADVANTAGES</span>
-                </h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {ADVANTAGES.map((adv, i) => (
-                        <div key={i} className="group relative bg-[#0B0F19] rounded-[2rem] p-8 border border-white/5 hover:border-teal-500/30 transition-all duration-300 hover:-translate-y-2">
-                            {/* Icon Container */}
-                            <div className="mb-6 relative">
-                                <span className="absolute -top-6 -right-6 bg-teal-500/20 text-teal-400 text-[10px] font-bold px-2 py-1 rounded-bl-xl border-l border-b border-teal-500/20">
-                                    {adv.badge}
-                                </span>
-                                <div className="size-16 rounded-2xl bg-teal-500/10 flex items-center justify-center text-teal-400 group-hover:scale-110 group-hover:rotate-[360deg] group-hover:shadow-[0_0_30px_rgba(45,212,191,0.3)] transition-all duration-700 ease-out">
-                                    <span className="material-symbols-outlined text-4xl">{adv.icon}</span>
-                                </div>
-                            </div>
-                            
-                            <h3 className="text-xl font-bold text-white mb-3">{adv.title}</h3>
-                            <p className="text-slate-400 text-sm leading-relaxed">
-                                {adv.desc}
-                            </p>
-                        </div>
-                    ))}
-                </div>
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">
+              No prompts found
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 max-w-md mx-auto mb-6">
+              {searchQuery && selectedCategory !== 'All'
+                ? `No prompts match "${searchQuery}" in the ${selectedCategory} category.`
+                : searchQuery
+                ? `We couldn't find any prompts matching "${searchQuery}". Try different keywords.`
+                : `No prompts available in the ${selectedCategory} category yet.`}
+            </p>
+            <div className="inline-flex gap-3">
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedCategory('All');
+                }}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors duration-300"
+              >
+                Clear Filters
+              </button>
+              <button
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="px-6 py-2.5 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white font-semibold rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors duration-300"
+              >
+                Back to Top
+              </button>
             </div>
-        </section>
-
-        {/* --- HOW IT WORKS SECTION --- */}
-        <section className="py-24 px-6 relative bg-black">
-            <div className="relative z-10 max-w-7xl mx-auto">
-                <h2 className="text-4xl md:text-6xl font-display font-bold text-white text-center mb-20 tracking-tight">
-                    HOW IT <span className="text-emerald-400">WORKS</span>
-                </h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 relative">
-                    {/* Connecting Line (Desktop) */}
-                    <div className="hidden lg:block absolute top-12 left-[12%] right-[12%] h-0.5 bg-gradient-to-r from-emerald-500/0 via-emerald-500/30 to-emerald-500/0 border-t border-dashed border-emerald-500/30 z-0"></div>
-
-                    {HOW_IT_WORKS.map((step, i) => (
-                        <div 
-                            key={i} 
-                            className="group relative z-10 text-center"
-                            onMouseEnter={() => setHoveredStep(i)}
-                            onMouseLeave={() => setHoveredStep(null)}
-                        >
-                            {/* Circle Step Number */}
-                            <div className="mx-auto size-24 rounded-full bg-[#0B0F19] border-4 border-emerald-500/20 group-hover:border-emerald-500 flex items-center justify-center relative mb-8 transition-all duration-300 shadow-xl group-hover:shadow-[0_0_40px_rgba(16,185,129,0.3)]">
-                                <span className="text-3xl font-bold text-white font-mono">
-                                    <AnimatedNumber number={step.number} isHovered={hoveredStep === i} />
-                                </span>
-                                {/* Small floating icon */}
-                                <div className="absolute -bottom-2 -right-2 size-10 rounded-full bg-emerald-600 flex items-center justify-center text-white shadow-lg border-4 border-black">
-                                    <span className="material-symbols-outlined text-sm">{step.icon}</span>
-                                </div>
-                            </div>
-
-                            <h3 className="text-xl font-bold text-white mb-3 group-hover:text-emerald-400 transition-colors">{step.title}</h3>
-                            <p className="text-slate-400 text-sm leading-relaxed max-w-xs mx-auto">
-                                {step.desc}
-                            </p>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </section>
-
-      </section>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
