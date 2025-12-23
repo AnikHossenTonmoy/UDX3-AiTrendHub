@@ -242,6 +242,13 @@ const CinematicHero = () => {
             </div>
 
             <div className="scene-1-text text-center md:text-left max-w-xl relative z-20">
+                {/* HEADLINE CURSOR GLOW */}
+                <div className="hidden md:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-500/20 rounded-full blur-[120px] -z-10 pointer-events-none mix-blend-screen transition-transform duration-75 will-change-transform"
+                     style={{ 
+                         transform: 'translate(calc(-50% + var(--mouse-x) * 120px), calc(-50% + var(--mouse-y) * 120px))' 
+                     }}>
+                </div>
+
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 backdrop-blur-md mb-6 shadow-[0_0_15px_rgba(124,92,255,0.3)]">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#7C5CFF] animate-pulse"></span>
                     <span className="text-[10px] font-bold text-[#F8FAFF] uppercase tracking-widest">System Online</span>
@@ -271,7 +278,7 @@ const CinematicHero = () => {
                 {/* FLOATING CARDS (Background Layer) */}
                 <div className="absolute inset-0 pointer-events-none">
                     {/* Card 5: Code (Background Top Right) */}
-                    <div className="absolute -top-40 right-20 p-4 rounded-2xl bg-[#1e1e2e]/40 border border-white/5 backdrop-blur-sm shadow-xl w-56 transform -rotate-12 translate-z-[-200px] animate-float-3 grayscale opacity-60">
+                    <div className="absolute -top-40 right-20 p-4 rounded-2xl bg-[#1e1e2e]/40 border border-white/5 backdrop-blur-sm shadow-xl w-56 transform -rotate-12 translate-z-[-200px] animate-float-3 grayscale opacity-60 hidden md:block">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="size-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-500">
                                 <span className="material-symbols-outlined text-[18px]">code</span>
@@ -283,12 +290,12 @@ const CinematicHero = () => {
                 </div>
 
                 {/* CENTRAL TERMINAL */}
-                <div style={{ transform: 'translateZ(50px)' }} className="relative z-10">
+                <div style={{ transform: 'translateZ(50px)' }} className="relative z-10 w-full flex justify-center">
                     <WorkflowTerminal />
                 </div>
 
                 {/* FLOATING CARDS (Foreground Layer) */}
-                <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute inset-0 pointer-events-none hidden md:block">
                     {/* Card 1: Image Gen (Top Left) */}
                     <div className="absolute -top-32 -left-20 p-4 rounded-2xl bg-[#1e1e2e]/80 border border-white/10 backdrop-blur-md shadow-2xl w-64 transform -rotate-6 translate-z-[100px] animate-float-1">
                         <div className="flex items-center gap-3 mb-2">
@@ -335,7 +342,7 @@ const CinematicHero = () => {
                 </div>
 
                 {/* Connection Lines */}
-                <div className="connector-lines"></div>
+                <div className="connector-lines hidden md:block"></div>
                 
                 <div className="absolute bottom-20 left-0 w-full text-center z-30">
                     <h2 className="text-4xl md:text-6xl font-display font-bold text-white mb-2 tracking-tight drop-shadow-[0_0_15px_rgba(0,0,0,0.8)]">Prompt Intelligence</h2>
@@ -364,7 +371,7 @@ const CinematicHero = () => {
                 ))}
             </div>
             
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center z-40 pointer-events-auto mix-blend-plus-lighter">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center z-40 pointer-events-auto mix-blend-plus-lighter w-full px-4">
                 <h2 className="text-5xl md:text-8xl font-display font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-white/0 leading-tight mb-8">
                     POWER<br/>TOOLS
                 </h2>
@@ -600,37 +607,57 @@ const CinematicHero = () => {
         @keyframes float-1 { 0%, 100% { transform: translateY(0) rotateX(0deg); } 50% { transform: translateY(-15px) rotateX(5deg); } }
         @keyframes float-2 { 0%, 100% { transform: translateY(0) rotateY(0deg); } 50% { transform: translateY(15px) rotateY(-5deg); } }
 
-        /* Mobile Adjustments */
+        /* Mobile Adjustments - Retain 3D scroll but scale elements properly */
         @media (max-width: 768px) {
-            .hero-track { height: auto !important; }
-            .hero-camera { position: relative; height: auto; overflow: visible; display: flex; flex-direction: column; gap: 80px; padding-bottom: 80px; }
+            /* Adjust Scene 1 Elements */
+            .ai-core-orb { width: 220px; height: 220px; }
+            .ring-1 { width: 280px; height: 280px; }
+            .ring-2 { width: 320px; height: 320px; }
+            .ring-3 { width: 360px; height: 360px; }
             
-            .scene-layer { 
-                position: relative; 
-                height: auto; 
-                min-height: 80vh; 
-                transform: none !important; 
-                opacity: 1 !important; 
-                display: flex !important; 
-                flex-direction: column;
-                padding: 40px 20px;
+            /* Scene 1 Text */
+            .scene-1-text h1 {
+                font-size: 2.8rem;
+                line-height: 1.1;
+            }
+            .scene-1-text p {
+                font-size: 1rem;
+                max-width: 90%;
+            }
+
+            /* Scene 2 Terminal - Responsive Scaling */
+            .terminal-window {
+                width: 85vw; /* Fit screen width */
+                max-width: 400px;
+                height: auto;
+                min-height: 260px;
+            }
+            .prompt-cloud {
+                transform: scale(0.9); /* Slight scale down */
             }
             
-            .scene-1 { padding-top: 100px; }
-            .ai-core-container { margin-right: 0; margin-bottom: 40px; transform: scale(0.8); }
-            .ai-core-orb { width: 200px; height: 200px; }
-            .scene-1-text { transform: none !important; text-align: center; }
-            
-            .scene-2 { opacity: 1 !important; transform: none !important; display: flex !important; flex-direction: column; gap: 40px; overflow: hidden; }
-            .prompt-cloud { transform: scale(0.7) !important; margin-bottom: 20px; height: 400px; }
-            .terminal-window { width: 100%; max-width: 350px; }
-            
-            /* Hide complex floating cards on mobile to prevent clutter */
+            /* Hide distracting floating cards on small screens */
             .absolute.p-4.rounded-2xl { display: none; }
             
-            .scene-3 { opacity: 1 !important; pointer-events: auto !important; }
-            .tool-matrix { transform: none !important; grid-template-columns: repeat(3, 1fr); gap: 10px; opacity: 1 !important; }
-            .matrix-tile { width: 80px; height: 80px; }
+            /* Scene 3 Matrix - Optimize for Mobile */
+            .tool-matrix {
+                grid-template-columns: repeat(3, 1fr); /* 3 columns instead of 4 */
+                gap: 12px;
+                transform: perspective(1000px) rotateX(40deg) translateY(calc((1 - var(--scroll)) * 200px)) scale(1);
+            }
+            .matrix-tile {
+                width: 64px;
+                height: 64px;
+                border-radius: 12px;
+            }
+            .matrix-tile img {
+                width: 28px;
+                height: 28px;
+            }
+            
+            .scene-3 h2 {
+                font-size: 3rem;
+            }
         }
       `}</style>
     </div>
