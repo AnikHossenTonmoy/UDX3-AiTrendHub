@@ -376,12 +376,12 @@ const CinematicHero = () => {
                     POWER<br/>TOOLS
                 </h2>
                 <button 
-                    onClick={() => window.scrollTo({ top: window.innerHeight * 8, behavior: 'smooth' })}
+                    onClick={() => navigate('/ai-tools')}
                     className="group relative px-8 py-4 bg-white text-black font-bold rounded-full text-lg overflow-hidden transition-transform hover:scale-105"
                 >
                     <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     <span className="relative z-10 flex items-center gap-2 group-hover:text-white transition-colors">
-                        Explore Studio <span className="material-symbols-outlined">arrow_forward</span>
+                        Explore Tools <span className="material-symbols-outlined">arrow_forward</span>
                     </span>
                 </button>
             </div>
@@ -607,57 +607,45 @@ const CinematicHero = () => {
         @keyframes float-1 { 0%, 100% { transform: translateY(0) rotateX(0deg); } 50% { transform: translateY(-15px) rotateX(5deg); } }
         @keyframes float-2 { 0%, 100% { transform: translateY(0) rotateY(0deg); } 50% { transform: translateY(15px) rotateY(-5deg); } }
 
-        /* Mobile Adjustments - Retain 3D scroll but scale elements properly */
+        /* Mobile Adjustments */
         @media (max-width: 768px) {
-            /* Adjust Scene 1 Elements */
+            .hero-track { height: auto !important; }
+            .hero-camera { position: relative; height: auto; overflow: visible; display: flex; flex-direction: column; gap: 80px; padding-bottom: 80px; }
+            
+            .scene-layer { 
+                position: relative; 
+                height: auto; 
+                min-height: 80vh; 
+                transform: none !important; 
+                opacity: 1 !important; 
+                display: flex !important; 
+                flex-direction: column;
+                padding: 40px 20px;
+            }
+            
+            .scene-1 { padding-top: 100px; }
+            .ai-core-container { margin-right: 0; margin-bottom: 40px; transform: scale(0.8); }
             .ai-core-orb { width: 220px; height: 220px; }
             .ring-1 { width: 280px; height: 280px; }
             .ring-2 { width: 320px; height: 320px; }
             .ring-3 { width: 360px; height: 360px; }
             
-            /* Scene 1 Text */
-            .scene-1-text h1 {
-                font-size: 2.8rem;
-                line-height: 1.1;
-            }
-            .scene-1-text p {
-                font-size: 1rem;
-                max-width: 90%;
-            }
-
-            /* Scene 2 Terminal - Responsive Scaling */
-            .terminal-window {
-                width: 85vw; /* Fit screen width */
-                max-width: 400px;
-                height: auto;
-                min-height: 260px;
-            }
-            .prompt-cloud {
-                transform: scale(0.9); /* Slight scale down */
-            }
+            .scene-1-text { transform: none !important; text-align: center; }
+            .scene-1-text h1 { font-size: 2.8rem; line-height: 1.1; }
+            .scene-1-text p { font-size: 1rem; max-width: 90%; }
             
-            /* Hide distracting floating cards on small screens */
+            .scene-2 { opacity: 1 !important; transform: none !important; display: flex !important; flex-direction: column; gap: 40px; overflow: hidden; }
+            .prompt-cloud { transform: scale(0.9) !important; margin-bottom: 20px; height: 400px; }
+            .terminal-window { width: 85vw; max-width: 400px; height: auto; min-height: 260px; }
+            
+            /* Hide complex floating cards on mobile to prevent clutter */
             .absolute.p-4.rounded-2xl { display: none; }
             
-            /* Scene 3 Matrix - Optimize for Mobile */
-            .tool-matrix {
-                grid-template-columns: repeat(3, 1fr); /* 3 columns instead of 4 */
-                gap: 12px;
-                transform: perspective(1000px) rotateX(40deg) translateY(calc((1 - var(--scroll)) * 200px)) scale(1);
-            }
-            .matrix-tile {
-                width: 64px;
-                height: 64px;
-                border-radius: 12px;
-            }
-            .matrix-tile img {
-                width: 28px;
-                height: 28px;
-            }
-            
-            .scene-3 h2 {
-                font-size: 3rem;
-            }
+            .scene-3 { opacity: 1 !important; pointer-events: auto !important; }
+            .scene-3 h2 { font-size: 3rem; }
+            .tool-matrix { transform: perspective(1000px) rotateX(40deg) translateY(calc((1 - var(--scroll)) * 200px)) scale(1); grid-template-columns: repeat(3, 1fr); gap: 12px; opacity: 1 !important; }
+            .matrix-tile { width: 64px; height: 64px; border-radius: 12px; }
+            .matrix-tile img { width: 28px; height: 28px; }
         }
       `}</style>
     </div>
