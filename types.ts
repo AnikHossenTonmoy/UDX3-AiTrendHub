@@ -14,7 +14,7 @@ export interface Tool {
   rating: number;
   reviews?: number;
   saves?: number;
-  isPaid: boolean; // Kept for backward compatibility
+  isPaid: boolean;
   pricingModel?: 'Free' | 'Freemium' | 'Paid' | 'Contact for Pricing';
   isActive: boolean;
   isDraft?: boolean;
@@ -22,14 +22,13 @@ export interface Tool {
   description?: string;
   shortDescription?: string;
   features?: string[];
-  pricing?: string[]; // Legacy simple list
-  plans?: PricingPlan[]; // New structured pricing
+  pricing?: string[];
+  plans?: PricingPlan[];
   screenshots?: string[];
   verified?: boolean;
-  // Live Data Fields
   trendScore?: number;
   publishedDate?: string;
-  lastVerified?: string; // ISO Date string for pricing verification
+  lastVerified?: string;
 }
 
 export interface Prompt {
@@ -46,9 +45,9 @@ export interface Prompt {
     avatar: string;
     handle: string;
   };
-  model: string; // e.g. GPT-4, NanoBanana
-  tool?: string; // e.g. Midjourney, ChatGPT
-  images?: string[]; // Preview images
+  model: string;
+  tool?: string;
+  images?: string[];
   difficulty?: 'Beginner' | 'Intermediate' | 'Advanced';
   status: 'Published' | 'Pending' | 'Draft';
   date: string;
@@ -56,7 +55,7 @@ export interface Prompt {
 
 export interface Video {
   id: string;
-  videoId: string; // YouTube ID or empty if search based
+  videoId: string;
   title: string;
   thumbnail: string;
   channelName: string;
@@ -65,9 +64,9 @@ export interface Video {
   duration: string;
   publishedAt: string;
   category: string;
-  searchQuery?: string; // For playing via search embed
-  sourceType?: 'youtube' | 'upload'; // New field to distinguish source
-  videoUrl?: string; // Blob URL for uploaded videos
+  searchQuery?: string;
+  sourceType?: 'youtube' | 'upload';
+  videoUrl?: string;
 }
 
 export interface User {
@@ -79,6 +78,8 @@ export interface User {
   joinedDate: string;
   avatar: string;
   lastActive?: string;
+  savedTools?: string[];
+  savedPrompts?: string[];
 }
 
 export interface StatCardProps {

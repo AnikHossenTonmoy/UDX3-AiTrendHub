@@ -2,8 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { HashRouter as Router, Routes, Route, useLocation, Navigate, Outlet } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
-import MobileNav from './components/MobileNav'; // Admin Mobile Nav
-import PublicMobileNav from './components/PublicMobileNav'; // Public Mobile Nav
+import MobileNav from './components/MobileNav';
+import PublicMobileNav from './components/PublicMobileNav';
 import Header from './components/Header';
 import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
@@ -11,6 +11,7 @@ import Tools from './pages/Tools';
 import Discovery from './pages/Discovery';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
+import Signup from './pages/Signup';
 import PromptDirectory from './pages/PromptDirectory';
 import PromptDetails from './pages/PromptDetails';
 import CategoryPrompts from './pages/CategoryPrompts';
@@ -23,8 +24,10 @@ import AdminUsers from './pages/AdminUsers';
 import SavedCollection from './pages/SavedCollection';
 import Studio from './pages/Studio';
 import Loader from './components/Loader';
+import AuthModal from './components/AuthModal';
 import Maintenance from './pages/Maintenance';
-import { useData } from './context/DataContext';
+import { DataProvider, useData } from './context/DataContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -34,9 +37,15 @@ const ScrollToTop = () => {
   return null;
 };
 
-// Layout for Admin Pages (Sidebar + Header)
+// Protect Admin routes
 const AdminLayout = () => {
+  const { user } = useAuth();
   const location = useLocation();
+  
+  if (!user || user.role !== 'Admin') {
+    return <Navigate to="/login" replace />;
+  }
+
   const getPageTitle = (path: string) => {
     if (path.includes('tools')) return 'Tools Management';
     if (path.includes('prompts')) return 'Prompt Management';
@@ -60,13 +69,9 @@ const AdminLayout = () => {
   );
 };
 
-// Layout for Public Pages (Navbar top + Bottom Nav on Mobile)
 const PublicLayout = () => {
   const { maintenanceMode } = useData();
-
-  if (maintenanceMode) {
-    return <Maintenance />;
-  }
+  if (maintenanceMode) return <Maintenance />;
 
   return (
     <div className="min-h-screen bg-white dark:bg-dark-bg transition-colors duration-300 pb-20 md:pb-0">
@@ -75,6 +80,7 @@ const PublicLayout = () => {
             <Outlet />
         </main>
         <PublicMobileNav />
+        <AuthModal />
     </div>
   );
 };
@@ -82,7 +88,6 @@ const PublicLayout = () => {
 const AppContent = () => {
   return (
     <Routes>
-      {/* Public Routes - Wrapped in PublicLayout which handles Maintenance Check */}
       <Route element={<PublicLayout />}>
          <Route path="/" element={<Discovery />} />
          <Route path="/prompts" element={<PromptDirectory />} />
@@ -95,10 +100,10 @@ const AppContent = () => {
          <Route path="/studio" element={<Studio />} />
       </Route>
 
-      {/* Admin Login (Accessible even in Maintenance) */}
-      <Route path="/admin-login" element={<Login />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+      <Route path="/admin-login" element={<Navigate to="/login" replace />} />
 
-      {/* Admin Routes (Accessible even in Maintenance) */}
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<Dashboard />} />
         <Route path="tools" element={<Tools />} />
@@ -106,10 +111,8 @@ const AppContent = () => {
         <Route path="videos" element={<AdminVideos />} />
         <Route path="users" element={<AdminUsers />} /> 
         <Route path="settings" element={<Settings />} />
-        <Route path="*" element={<div className="p-8 text-center text-slate-500">Feature coming soon</div>} />
       </Route>
 
-      {/* Catch all */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
@@ -119,26 +122,27 @@ const App = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate initial loading time for splash screen
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 2500); // 2.5 seconds splash screen
+    const timer = setTimeout(() => setLoading(false), 2500);
     return () => clearTimeout(timer);
   }, []);
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#f8fafc] dark:bg-[#101622] transition-colors duration-300">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#f8fafc] dark:bg-[#101622]">
         <Loader />
       </div>
     );
   }
 
   return (
-    <Router>
-      <ScrollToTop />
-      <AppContent />
-    </Router>
+    <AuthProvider>
+      <DataProvider>
+        <Router>
+          <ScrollToTop />
+          <AppContent />
+        </Router>
+      </DataProvider>
+    </AuthProvider>
   );
 };
 
