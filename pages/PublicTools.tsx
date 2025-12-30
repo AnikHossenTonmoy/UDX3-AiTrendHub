@@ -132,9 +132,16 @@ const PublicTools = () => {
 
        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 pb-20">
           <div className="py-4 mb-6 sticky top-16 z-30 bg-slate-50/80 dark:bg-dark-bg/80 backdrop-blur-xl border-y border-transparent">
-              <div className="flex gap-2 overflow-x-auto no-scrollbar justify-center">
-                {uniqueCategories.map(cat => (
-                    <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border transition-all ${activeCategory === cat ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900' : 'bg-white dark:bg-dark-surface text-slate-600 dark:text-slate-300 border-slate-200 hover:border-slate-300'}`}>{cat}</button>
+              <div className="flex gap-3 overflow-x-auto no-scrollbar px-4 justify-start md:justify-center w-full">
+                {uniqueCategories.map((cat, index) => (
+                    <button 
+                        key={cat} 
+                        onClick={() => setActiveCategory(cat)} 
+                        style={{ animationDelay: `${index * 50}ms` }}
+                        className={`px-5 py-2.5 rounded-full text-sm font-bold whitespace-nowrap border transition-all animate-slideInRight opacity-0 ${activeCategory === cat ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 shadow-lg' : 'bg-white dark:bg-dark-surface text-slate-600 dark:text-slate-300 border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                    >
+                        {cat}
+                    </button>
                 ))}
               </div>
           </div>

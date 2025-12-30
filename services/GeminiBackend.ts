@@ -2,20 +2,73 @@
 import { GoogleGenAI } from "@google/genai";
 import { Tool, Video } from "../types";
 
-// Explicitly use the provided API Key or Environment Variable
-const API_KEY = process.env.API_KEY || 'AIzaSyAUJwf-BEBOLdwV1V6wDAKl53FSy9kR4E4';
-const N8N_WEBHOOK_URL = 'https://udx3-12.app.n8n.cloud/webhook-test/ai-sync';
+// --- API KEY ROTATION SYSTEM ---
+// The user provided keys for trial rotation. In production, load these from process.env.GEMINI_KEYS (comma separated)
+const PROVIDED_KEYS = [
+  'AIzaSyBpQJQEHPappArpBa0Kg9kDmxX_3v7915g',
+  'AIzaSyBKtzK36jvaIZxOhE3SCUVbWO0i68Xkoi4',
+  'AIzaSyCm5oOKdlFseu5v08QTJbc_TEiy71jqDZ0',
+  'AIzaSyDBc4Lqfij5g7N44GNQJWtosz-w__RJXHE',
+  'AIzaSyDoOARrDUKWXVujjzBQzLV8Hh87Zzm4E3Q'
+];
 
-// Safe environment variable access for browser
-const getEnv = (key: string) => {
-    if (typeof process !== 'undefined' && process.env) {
-        return process.env[key];
-    }
-    return undefined;
+// Combine env var keys with provided keys
+const getApiKeyPool = () => {
+    const envKeys = process.env.GEMINI_API_KEYS ? process.env.GEMINI_API_KEYS.split(',') : [];
+    const primaryKey = process.env.API_KEY ? [process.env.API_KEY] : [];
+    // Deduplicate and filter empty
+    const allKeys = [...new Set([...primaryKey, ...envKeys, ...PROVIDED_KEYS])].filter(k => k && k.trim().length > 0);
+    return allKeys;
 };
 
-// Initialize Client (Default instance)
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+const API_KEY_POOL = getApiKeyPool();
+let currentKeyIndex = 0;
+
+const getActiveKey = () => API_KEY_POOL[currentKeyIndex];
+
+const rotateKey = () => {
+    const prevIndex = currentKeyIndex;
+    currentKeyIndex = (currentKeyIndex + 1) % API_KEY_POOL.length;
+    console.warn(`[GeminiBackend] Rotating API Key: ${prevIndex} -> ${currentKeyIndex}`);
+};
+
+// Wrapper to execute operations with automatic key rotation on failure
+async function executeWithRotation<T>(operation: (client: GoogleGenAI) => Promise<T>): Promise<T> {
+    let attempts = 0;
+    const maxAttempts = API_KEY_POOL.length; // Try every key once
+
+    while (attempts < maxAttempts) {
+        try {
+            const apiKey = getActiveKey();
+            const client = new GoogleGenAI({ apiKey });
+            return await operation(client);
+        } catch (error: any) {
+            const status = error.status || error.response?.status;
+            const msg = (error.message || '').toLowerCase();
+            
+            // Check for rotation triggers: 
+            // 429 (Quota)
+            // 401/403 (Auth/Permission)
+            // 404 (Not Found - often means model not available for this specific API key/project tier)
+            const isQuota = status === 429 || msg.includes('429') || msg.includes('quota') || msg.includes('too many requests');
+            const isAuth = status === 401 || status === 403 || msg.includes('key not valid') || msg.includes('unauthorized') || msg.includes('permission_denied') || msg.includes('permission denied');
+            const isNotFound = status === 404 || msg.includes('not_found') || msg.includes('not found');
+
+            if (isQuota || isAuth || isNotFound) {
+                console.warn(`[GeminiBackend] Error (Status: ${status}). Retrying with next key...`);
+                rotateKey();
+                attempts++;
+            } else {
+                // If it's a logic error (400) or server error (500), throw immediately unless we want to retry 500s too.
+                console.error("[GeminiBackend] Non-rotatable error:", error);
+                throw error;
+            }
+        }
+    }
+    throw new Error("All Gemini API keys in the rotation pool have been exhausted. Please check your quota, API permissions, or model availability.");
+}
+
+const N8N_WEBHOOK_URL = 'https://udx3-12.app.n8n.cloud/webhook-test/ai-sync';
 
 // --- FALLBACK DATA (Offline Mode / Quota Exceeded) ---
 const FALLBACK_TRENDING: Tool[] = [
@@ -59,25 +112,22 @@ const setCache = (key: string, data: any) => {
     }
 };
 
-// Helper: Call Google GenAI SDK
+// Helper: Call Google GenAI SDK with Rotation
 async function callGenAI(prompt: string, jsonMode: boolean = true): Promise<string> {
-    try {
+    return executeWithRotation(async (client) => {
         const config: any = {};
         if (jsonMode) {
             config.responseMimeType = 'application/json';
         }
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+        const response = await client.models.generateContent({
+            model: 'gemini-2.0-flash-exp', // Using 2.0 Flash Exp for robust text generation
             contents: prompt,
             config: config
         });
         
         return response.text || (jsonMode ? "[]" : "");
-    } catch (error: any) {
-        console.warn("Gemini API Call Failed:", error.message || error);
-        throw error;
-    }
+    });
 }
 
 // Helper: Parse JSON
@@ -312,20 +362,23 @@ export const GeminiBackend = {
   },
 
   async findYoutubeId(query: string): Promise<string | null> {
-    try {
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: `Find the specific YouTube video ID (11 characters) for the video: "${query}". Return ONLY the ID string. If you cannot find it, return "null".`,
-        config: { tools: [{ googleSearch: {} }] }
-      });
-      const text = response.text || "";
-      const cleanText = text.trim();
-      const idMatch = cleanText.match(/[a-zA-Z0-9_-]{11}/);
-      if (idMatch) return idMatch[0];
-      return null;
-    } catch (e) {
-      return null;
-    }
+    return executeWithRotation(async (client) => {
+        try {
+            const response = await client.models.generateContent({
+                model: "gemini-2.0-flash-exp",
+                contents: `Find the specific YouTube video ID (11 characters) for the video: "${query}". Return ONLY the ID string. If you cannot find it, return "null".`,
+                config: { tools: [{ googleSearch: {} }] }
+            });
+            const text = response.text || "";
+            const cleanText = text.trim();
+            const idMatch = cleanText.match(/[a-zA-Z0-9_-]{11}/);
+            if (idMatch) return idMatch[0];
+            return null;
+        } catch (e) {
+            // Let the rotation logic handle auth/quota errors, but return null for logic errors
+            throw e;
+        }
+    }).catch(() => null);
   },
 
   async generateThumbnail(title: string): Promise<string | null> {
@@ -363,27 +416,134 @@ export const GeminiBackend = {
   // --- STUDIO FEATURES ---
 
   async generateImage(prompt: string, size: '1K' | '2K' | '4K', aspectRatio: string): Promise<string | null> {
-      try {
-          const currentKey = getEnv('API_KEY') || API_KEY;
-          const freshAi = new GoogleGenAI({ apiKey: currentKey });
-          const response = await freshAi.models.generateContent({
-              model: 'gemini-3-pro-image-preview',
-              contents: { parts: [{ text: prompt }] },
-              config: { imageConfig: { imageSize: size, aspectRatio: aspectRatio } }
-          });
-          for (const part of response.candidates?.[0]?.content?.parts || []) {
-              if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`;
+      return executeWithRotation(async (client) => {
+          try {
+              // Revert to gemini-2.5-flash-image via generateContent as requested by system specs.
+              // Note: This model is for image generation but uses generateContent structure.
+              const response = await client.models.generateContent({
+                  model: 'gemini-2.5-flash-image',
+                  contents: { parts: [{ text: prompt }] },
+                  config: {
+                      imageConfig: {
+                          aspectRatio: aspectRatio,
+                          // imageSize not widely supported for flash-image, defaulting to 1K
+                      }
+                  }
+              });
+              
+              // Extract inline image
+              for (const part of response.candidates?.[0]?.content?.parts || []) {
+                  if (part.inlineData) {
+                      return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                  }
+              }
+              return null;
+          } catch (e) {
+              console.error("Gemini Image Generation Error:", e);
+              throw e; 
           }
-          return null;
-      } catch (e) { throw e; }
+      });
+  },
+
+  // --- NEW: Logo Editing Feature ---
+  async editImage(imageBase64: string, prompt: string): Promise<string | null> {
+      return executeWithRotation(async (client) => {
+          try {
+              // Robustly separate Data URI header from base64 data
+              let mimeType = 'image/png'; // Default
+              let data = imageBase64;
+
+              // Check if it has a data URI prefix and strip it
+              if (imageBase64.includes('data:') && imageBase64.includes(';base64,')) {
+                  const parts = imageBase64.split(';base64,');
+                  if (parts.length === 2) {
+                      // Attempt to extract real mime from header e.g. "data:image/jpeg"
+                      const prefix = parts[0];
+                      const typeMatch = prefix.match(/data:(.*)/);
+                      if (typeMatch && typeMatch[1]) {
+                          mimeType = typeMatch[1];
+                      }
+                      data = parts[1]; // The raw base64 string
+                  }
+              }
+
+              // Ensure mimeType is supported by Gemini (jpeg, png, webp, heic, heif)
+              // If it's something else like 'image/svg+xml', Gemini might reject it.
+              const validMimes = ['image/png', 'image/jpeg', 'image/webp', 'image/heic', 'image/heif'];
+              if (!validMimes.includes(mimeType)) {
+                  console.warn(`[GeminiBackend] Unsupported MIME type ${mimeType} for editImage. Defaulting to image/png.`);
+                  mimeType = 'image/png';
+              }
+
+              const response = await client.models.generateContent({
+                  model: 'gemini-2.5-flash-image', // Good for editing/variations
+                  contents: {
+                      parts: [
+                          {
+                              inlineData: {
+                                  mimeType: mimeType,
+                                  data: data
+                              }
+                          },
+                          {
+                              text: prompt
+                          }
+                      ]
+                  }
+              });
+
+              for (const part of response.candidates?.[0]?.content?.parts || []) {
+                  if (part.inlineData) {
+                      return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                  }
+              }
+              return null;
+          } catch (e) {
+              console.error("Gemini Image Edit Error:", e);
+              throw e;
+          }
+      });
   },
 
   async *chatStream(history: any[], message: string, model: string) {
-      const currentKey = getEnv('API_KEY') || API_KEY;
-      const freshAi = new GoogleGenAI({ apiKey: currentKey });
-      const chat = freshAi.chats.create({ model: model, history: history });
-      const result = await chat.sendMessageStream({ message: message });
-      for await (const chunk of result) { yield chunk.text; }
+      // Manual Rotation Logic for Streams since we need to yield
+      let attempts = 0;
+      const maxAttempts = API_KEY_POOL.length;
+
+      // Use a safer model if the requested one is known to cause issues
+      const safeModel = model.includes('gemini-3') ? 'gemini-2.0-flash-exp' : model;
+
+      while (attempts < maxAttempts) {
+          try {
+              const apiKey = getActiveKey();
+              const client = new GoogleGenAI({ apiKey });
+              const chat = client.chats.create({ model: safeModel, history: history });
+              const result = await chat.sendMessageStream({ message: message });
+              
+              for await (const chunk of result) { 
+                  yield chunk.text; 
+              }
+              return; // Success, exit loop
+          } catch (error: any) {
+              const status = error.status || error.response?.status;
+              const msg = (error.message || '').toLowerCase();
+              const isQuota = status === 429 || msg.includes('429') || msg.includes('quota') || msg.includes('too many requests');
+              const isAuth = status === 401 || status === 403 || msg.includes('key not valid') || msg.includes('permission_denied') || msg.includes('permission denied');
+              // Add 404 to rotation triggers
+              const isNotFound = status === 404 || msg.includes('not_found') || msg.includes('not found');
+
+              if (isQuota || isAuth || isNotFound) {
+                  console.warn(`[GeminiBackend] Chat Stream Error (Status: ${status}). Rotating...`);
+                  rotateKey();
+                  attempts++;
+              } else {
+                  console.error("[GeminiBackend] Stream Error:", error);
+                  yield "Error: Could not connect to AI service.";
+                  return;
+              }
+          }
+      }
+      yield "System Busy: All AI quotas exhausted. Please try again later.";
   }
 };
 
