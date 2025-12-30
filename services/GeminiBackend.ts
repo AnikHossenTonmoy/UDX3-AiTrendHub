@@ -467,6 +467,9 @@ export const GeminiBackend = {
                   }
               }
 
+              // Strip any potential whitespace or newlines from base64 string
+              data = data.replace(/\s/g, '');
+
               // Ensure mimeType is supported by Gemini (jpeg, png, webp, heic, heif)
               // If it's something else like 'image/svg+xml', Gemini might reject it.
               const validMimes = ['image/png', 'image/jpeg', 'image/webp', 'image/heic', 'image/heif'];
@@ -477,19 +480,21 @@ export const GeminiBackend = {
 
               const response = await client.models.generateContent({
                   model: 'gemini-2.5-flash-image', // Good for editing/variations
-                  contents: {
-                      parts: [
-                          {
-                              inlineData: {
-                                  mimeType: mimeType,
-                                  data: data
+                  contents: [ // Pass as array of contents
+                      {
+                          parts: [
+                              {
+                                  inlineData: {
+                                      mimeType: mimeType,
+                                      data: data
+                                  }
+                              },
+                              {
+                                  text: prompt
                               }
-                          },
-                          {
-                              text: prompt
-                          }
-                      ]
-                  }
+                          ]
+                      }
+                  ]
               });
 
               for (const part of response.candidates?.[0]?.content?.parts || []) {
