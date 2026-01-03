@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { HashRouter as Router, Routes, Route, useLocation, Navigate, Outlet } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
@@ -26,8 +25,8 @@ import Studio from './pages/Studio';
 import Loader from './components/Loader';
 import AuthModal from './components/AuthModal';
 import Maintenance from './pages/Maintenance';
-import { DataProvider, useData } from './context/DataContext';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { useData } from './context/DataContext';
+import { useAuth } from './context/AuthContext';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -135,14 +134,10 @@ const App = () => {
   }
 
   return (
-    <AuthProvider>
-      <DataProvider>
-        <Router>
-          <ScrollToTop />
-          <AppContent />
-        </Router>
-      </DataProvider>
-    </AuthProvider>
+    <Router>
+      <ScrollToTop />
+      <AppContent />
+    </Router>
   );
 };
 

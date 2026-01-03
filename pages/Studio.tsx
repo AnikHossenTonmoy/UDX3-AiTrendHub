@@ -91,11 +91,12 @@ const Studio = () => {
           setIsGenerating(true);
           setGeneratedImage(null);
           try {
-              const result = await GeminiBackend.generateImage(`${imageStyle} style: ${imagePrompt}`, imageSize, aspectRatio);
+              // Pass style separately to allow backend to construct correct JSON for N8N
+              const result = await GeminiBackend.generateImage(imagePrompt, imageSize, aspectRatio, imageStyle);
               if (result) {
                   setGeneratedImage(result);
               } else {
-                  alert("Failed to generate image.");
+                  alert("Failed to generate image. Please try again or check your credits.");
               }
           } catch (e) { console.error(e); alert("Error generating image."); } finally { setIsGenerating(false); }
       });
